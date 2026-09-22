@@ -19,7 +19,7 @@ npm run build    # production build
 npm run deploy   # build + publish to gh-pages
 ```
 
-Live: https://stuatnext.github.io/next-retreat-2027/
+Live: https://nextdotio.github.io/next-retreat-2027/
 
 ## Where things are
 

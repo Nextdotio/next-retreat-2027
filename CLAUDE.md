@@ -24,7 +24,7 @@ npm run deploy   # = vite build && npx gh-pages -d dist
 ```
 
 Confirm it prints `Published` before reporting done. Publishes to
-`https://stuatnext.github.io/next-retreat-2027/`.
+`https://nextdotio.github.io/next-retreat-2027/`.
 
 ## Structure of `src/App.jsx`
 
