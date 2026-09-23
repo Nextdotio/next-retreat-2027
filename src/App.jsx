@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
-  Anchor, ArrowRight, ArrowUpRight, BadgeCheck, Calendar, Check, ChevronDown,
-  Crown, Download, Handshake, Lock, Mail, MapPin, Mic, Minus, Plus,
-  Quote, Sailboat, ShieldCheck, Sparkles, Sun, Ticket, Trophy, Users,
+  Anchor, ArrowRight, ArrowUpRight, BadgeCheck, Check, ChevronDown,
+  Crown, Download, Handshake, Lock, Mail, Mic, Minus, Plus,
+  Sailboat, ShieldCheck, Sparkles, Sun, Ticket, Trophy, Users,
   Waves, Wine, X,
 } from 'lucide-react'
+// Hashed URL of the self-hosted face, so the printables can load Jost too
+import jostLatin from './fonts/jost-latin.woff2?url'
 
 /* ═══════════════════════════════════════════════════════════════════════════
    NEXT.io Retreats 2027 — partner brochure
@@ -35,7 +37,6 @@ const DESTINATIONS = {
     id: 'europe',
     theme: 'theme-europe',
     tag: 'Europe',
-    flag: '🇨🇾',
     place: 'Cyprus',
     // Mirrors the official cover lockup line
     coverLine: 'EUROPE · 11–13 OCTOBER, 2027',
@@ -130,7 +131,6 @@ const DESTINATIONS = {
     id: 'latam',
     theme: 'theme-latam',
     tag: 'LatAm',
-    flag: '🇲🇽',
     place: 'Cancún, Mexico',
     coverLine: 'CANCÚN · 15–17 NOVEMBER, 2027',
     venue: 'Secrets Maroma Beach Riviera Cancun',
@@ -470,6 +470,36 @@ function Shell({ children, className = '' }) {
   return <div className={`mx-auto max-w-[1400px] px-5 sm:px-8 ${className}`}>{children}</div>
 }
 
+/* A logo on a wall. A shared height makes a long wordmark look huge next to
+   a square mark, so each logo is sized to the same visual area instead:
+   height ∝ 1/√(aspect), width ∝ √(aspect). The wall sets the scale with
+   --logo-k (the side of the target square, in px) and caps it with the
+   max-h / max-w classes passed in; object-contain keeps the ratio whichever
+   cap bites. Until the file loads it simply renders at its natural size. */
+function WallLogo({ src, alt, className = '' }) {
+  const ref = useRef(null)
+  const [ar, setAr] = useState(0)
+  const measure = useCallback((img) => {
+    if (img?.naturalWidth && img.naturalHeight) setAr(img.naturalWidth / img.naturalHeight)
+  }, [])
+  useEffect(() => {
+    if (ref.current?.complete) measure(ref.current)
+  }, [src, measure])
+  return (
+    <img
+      ref={ref}
+      src={src}
+      alt={alt}
+      decoding="async"
+      onLoad={(e) => measure(e.currentTarget)}
+      style={ar ? { '--logo-h': 1 / Math.sqrt(ar), '--logo-w': Math.sqrt(ar) } : undefined}
+      className={`object-contain ${ar
+        ? 'h-[calc(var(--logo-k)*var(--logo-h))] w-[calc(var(--logo-k)*var(--logo-w))]'
+        : 'h-auto w-auto'} ${className}`}
+    />
+  )
+}
+
 function useCountdown(iso) {
   const [left, setLeft] = useState(() => Math.max(0, new Date(iso) - new Date()))
   useEffect(() => {
@@ -493,56 +523,59 @@ function openPrintable(html) {
   setTimeout(() => URL.revokeObjectURL(url), 120000)
 }
 
-function printShell(title, subtitle, body) {
+/* The printables are opened from a blob: URL, so every asset they load needs
+   an absolute URL. They carry the same identity as the page: the official
+   lockup file (never re-set as live text) and Jost, serif-free. */
+const absUrl = (p) => new URL(p, window.location.href).href
+
+function printShell(title, subtitle, body, { addonTerms = true } = {}) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8">
 <title>${esc(title)}</title>
-<script>window.addEventListener('load',function(){setTimeout(function(){window.print()},600)});<\/script>
+<script>window.addEventListener('load',function(){var go=function(){setTimeout(function(){window.print()},400)};if(document.fonts&&document.fonts.ready){document.fonts.ready.then(go)}else{go()}});<\/script>
 <style>
+  @font-face{font-family:'Jost';font-style:normal;font-weight:200 700;src:url('${absUrl(jostLatin)}') format('woff2')}
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;color:#242426;background:#fff;font-size:12px;line-height:1.55}
-  .cover{background:#242426;color:#fff;padding:48px 48px 42px;position:relative;overflow:hidden}
-  .cover .brand{font-size:22px;font-weight:800;letter-spacing:-0.02em}
-  .cover .brand i{color:#ffcf33;font-style:normal}
-  .cover .sub{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:#fff;margin-top:6px}
-  .cover h1{font-family:Georgia,'Times New Roman',serif;font-size:30px;font-weight:400;margin-top:22px}
+  body{font-family:'Jost',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;color:#242426;background:#fff;font-size:12.5px;line-height:1.55}
+  .cover{background:#242426;color:#fff;padding:44px 48px 42px;position:relative;overflow:hidden}
+  .cover .lockup{display:block;height:46px;width:auto}
+  .cover h1{font-size:31px;font-weight:300;letter-spacing:-0.005em;line-height:1.15;margin-top:26px}
   .cover p{color:#bdbdbd;margin-top:9px;font-size:12.5px}
   .cover .bar{position:absolute;right:0;top:0;bottom:0;width:120px;
     background:repeating-linear-gradient(180deg,#ffcf33 0 12px,transparent 12px 22px);opacity:.9;
     clip-path:polygon(0 0,70% 0,100% 50%,70% 100%,0 100%)}
   section{padding:26px 48px 6px}
-  h2{font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;border-bottom:2px solid #ffcf33;padding-bottom:7px;margin-bottom:16px;page-break-after:avoid}
+  h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;border-bottom:2px solid #ffcf33;padding-bottom:7px;margin-bottom:16px;page-break-after:avoid}
+  .note{margin:-6px 0 14px;font-size:11.5px;color:#61616a}
   .item{border:1px solid #e3e3e5;border-radius:6px;padding:14px 16px;margin-bottom:12px;page-break-inside:avoid}
   .ihead{display:flex;justify-content:space-between;align-items:baseline;gap:14px}
-  .ihead h3{font-size:14px;font-weight:700}
+  .ihead h3{font-size:15px;font-weight:600}
   .avail{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:#6b5216;background:#fff6d9;border-radius:3px;padding:3px 8px;white-space:nowrap;margin-left:8px}
-  .price{font-size:17px;font-weight:700;white-space:nowrap}
+  .price{font-size:18px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums lining-nums}
   .line{font-style:italic;color:#61616a;margin:7px 0 9px}
   ul{padding-left:17px}
   li{margin-bottom:3px;color:#45454d}
-  .cond{margin-top:9px;background:#fbfbfc;border:1px solid #e3e3e5;border-radius:4px;padding:6px 10px;font-size:11px;color:#45454d}
   table{width:100%;border-collapse:collapse}
   thead tr{background:#f4f4f5}
-  th{padding:9px 14px;text-align:left;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:#82828c}
+  th{padding:9px 14px;text-align:left;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:#82828c}
   th:last-child{text-align:right}
   td{padding:11px 14px;border-bottom:1px solid #ebebee;vertical-align:top}
-  td:last-child{text-align:right;font-weight:700;white-space:nowrap}
-  .total td{background:#242426;color:#fff;font-weight:700;font-size:14px;border:0}
-  .total td:last-child{color:#ffcf33;font-size:19px}
+  td:last-child{text-align:right;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums lining-nums}
+  .total td{background:#242426;color:#fff;font-weight:600;font-size:14px;border:0}
+  .total td:last-child{color:#ffcf33;font-size:20px}
   .foot{padding:26px 48px 40px;border-top:2px solid #ffcf33;margin-top:26px;color:#61616a;font-size:11px;line-height:1.75}
-  .foot strong{color:#242426}
+  .foot strong{color:#242426;font-weight:600}
   @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style></head><body>
 <div class="cover">
   <div class="bar"></div>
-  <div class="brand">NEXT<i>.io</i></div>
-  <div class="sub">Retreat</div>
+  <img class="lockup" src="${absUrl(asset('logos/next-retreat-lockup.png'))}" alt="NEXT.io Retreat">
   <h1>${esc(title)}</h1>
   <p>${subtitle}</p>
 </div>
 ${body}
 <div class="foot">
   All prices exclude VAT. Availability is live and subject to change without notice.<br>
-  ${esc(ADDON_CONDITION)}<br>
+  ${addonTerms ? `${esc(ADDON_CONDITION)}<br>` : ''}
   Partnerships: <strong>sales@next.io</strong> &nbsp;·&nbsp; next.io
 </div>
 </body></html>`
@@ -592,11 +625,13 @@ function exportRateCard(dest) {
       <div class="price">${eur(a.price)}</div></div>
       <p class="line">${esc(local.title)}</p>
       <ul><li>${esc(local.blurb)}</li></ul>
-      <div class="cond">${esc(ADDON_CONDITION)}</div>
     </div>`
   }).join('')
+  // The add-on condition is stated once, where it applies, rather than boxed
+  // under every activity and repeated again in the footer.
   const body = `<section><h2>Partnerships &amp; tickets</h2>${pkgs}</section>
-    <section><h2>Leisure activities · ${esc(dest.place)}</h2>${adds}</section>
+    <section><h2>Leisure activities · ${esc(dest.place)}</h2>
+      <p class="note">${esc(ADDON_CONDITION)}</p>${adds}</section>
     <section><h2>The room</h2>
       <div class="item">
         <ul>
@@ -613,6 +648,7 @@ function exportRateCard(dest) {
     `Retreat ${dest.tag} 2027 — Rate Card`,
     `${esc(dest.dates)} &nbsp;·&nbsp; ${esc(dest.venue)}, ${esc(dest.place)} &nbsp;·&nbsp; Generated ${today()}`,
     body,
+    { addonTerms: false },
   ))
 }
 
@@ -664,16 +700,15 @@ function DestinationSwitch({ active, onChange, compact = false }) {
             role="tab"
             aria-selected={on}
             onClick={() => onChange(d.id)}
-            className={`relative rounded-full transition-all duration-500 font-sans
-                        ${compact ? 'px-3.5 py-1.5 text-[11px]' : 'px-5 sm:px-7 py-2.5 text-xs sm:text-[13px]'}
+            className={`relative whitespace-nowrap rounded-full transition-all duration-500 font-sans
+                        ${compact ? 'px-4 py-1.5 text-[11px]' : 'px-5 sm:px-7 py-2.5 text-xs sm:text-[13px]'}
                         ${on
                           ? 'bg-brand-yellow text-brand-dark font-medium'
                           : 'text-white/50 hover:text-white/90'}`}
           >
-            <span className="mr-1.5">{d.flag}</span>
             <span className="uppercase track-mid">{d.tag}</span>
             {!compact && (
-              <span className={`ml-2 hidden sm:inline ${on ? 'text-brand-dark/65' : 'text-white/35'}`}>
+              <span className={`ml-2.5 hidden sm:inline num ${on ? 'text-brand-dark/65' : 'text-white/35'}`}>
                 {d.datesTight}
               </span>
             )}
@@ -699,10 +734,16 @@ function Nav({ destId, setDestId, cartCount }) {
                     : 'bg-gradient-to-b from-ink/85 via-ink/45 to-transparent'}`}
     >
       <Shell className="h-16 sm:h-20 flex items-center gap-4">
-        <a href="#top" className="shrink-0" aria-label="Top">
+        {/* The hero carries the full-size lockup, so the header only shows its
+            own once the hero's has scrolled away — never two on one screen. */}
+        <a
+          href="#top"
+          className={`shrink-0 transition-[opacity,visibility] duration-500 ${solid ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
+          aria-label="Top"
+        >
           <Lockup className="h-8 sm:h-10" />
         </a>
-        <nav className="hidden xl:flex items-center gap-6 ml-8 font-sans text-[11.5px] uppercase track-mid">
+        <nav className="hidden xl:flex items-center gap-5 ml-7 font-sans text-[11.5px] uppercase track-mid whitespace-nowrap">
           {NAV.map(([id, label]) => (
             <a key={id} href={`#${id}`} className="text-white/45 hover:text-brand-yellow transition-colors">
               {label}
@@ -798,7 +839,8 @@ function Hero({ dest, destId, setDestId }) {
       <div className="grain absolute inset-0" />
       <SeaWaves className="absolute inset-x-0 bottom-0 z-[1] w-full" />
 
-      <Shell className="relative flex-1 w-full flex flex-col justify-center pt-28 pb-14">
+      {/* The phone header is two rows (~108px), so the hero clears it with room to spare */}
+      <Shell className="relative flex-1 w-full flex flex-col justify-center pt-36 sm:pt-28 pb-14">
         <div className="reveal in">
           <Lockup className="h-14 sm:h-20 lg:h-24" />
 
@@ -834,19 +876,32 @@ function Hero({ dest, destId, setDestId }) {
 
         <div className="mt-12 sm:mt-16">
           <Rule className="mb-7 opacity-60" />
-          <dl className="grid grid-cols-2 lg:grid-cols-4 gap-y-8 gap-x-6">
+          {/* Each value is a run of unbreakable phrases: a line may only break
+              between them (after the "·"), so "50 / 50" or "Chatham House Rule"
+              never split and no single word is left on a line of its own. */}
+          <dl className="grid grid-cols-2 gap-y-8 gap-x-6 lg:flex lg:justify-between lg:gap-x-8">
             {[
-              [Users, 'The room', '100 delegates · 50 / 50'],
-              [Waves, 'Format', 'Retreat · 3 days, 2 nights'],
-              [Crown, 'Edition', '4th · capped guest list'],
-              [ShieldCheck, 'On the record', 'Nothing. Chatham House Rule'],
-            ].map(([Icon, k, v], i) => (
-              <div key={k} className="reveal in" style={{ transitionDelay: `${120 + i * 90}ms` }}>
+              [Users, 'The room', ['100 delegates', '50 / 50'], true],
+              [Waves, 'Format', ['Retreat', '3 days, 2 nights'], true],
+              [Crown, 'Edition', ['4th', 'capped guest list'], true],
+              [ShieldCheck, 'On the record', ['Nothing.', 'Chatham House Rule'], false],
+            ].map(([Icon, k, parts, dotted], i) => (
+              <div key={k} className="reveal in min-w-0" style={{ transitionDelay: `${120 + i * 90}ms` }}>
                 <dt className="flex items-center gap-2 font-sans text-[10px] uppercase track-wide text-white/40">
                   <Icon size={13} className="text-brand-yellow" strokeWidth={1.5} />
                   {k}
                 </dt>
-                <dd className="mt-2 font-display text-lg sm:text-2xl font-light text-white leading-snug">{v}</dd>
+                <dd className="mt-2 font-display text-[17px] sm:text-xl xl:text-2xl font-light text-white leading-snug num">
+                  {parts.map((p, j) => (
+                    <span key={p}>
+                      {j > 0 && ' '}
+                      <span className="whitespace-nowrap">
+                        {p}
+                        {dotted && j < parts.length - 1 && <span className="text-white/35"> ·</span>}
+                      </span>
+                    </span>
+                  ))}
+                </dd>
               </div>
             ))}
           </dl>
@@ -954,11 +1009,11 @@ function Why({ dest }) {
               </p>
             </div>
 
-            <div className="reveal mt-10 flex flex-wrap gap-x-10 gap-y-5">
+            <div className="reveal mt-10 grid grid-cols-3 gap-x-5 sm:flex sm:flex-wrap sm:gap-x-10 sm:gap-y-5">
               {[['100', 'delegates, capped'], ['50/50', 'operators to suppliers'], ['83%', 'C-level']].map(([n, l]) => (
                 <div key={l}>
-                  <div className="font-display text-4xl sm:text-5xl font-light text-brand-yellow num">{n}</div>
-                  <div className="mt-1 font-sans text-[11px] uppercase track-mid text-white/45">{l}</div>
+                  <div className="font-display text-[2.1rem] sm:text-5xl font-light text-brand-yellow num leading-none">{n}</div>
+                  <div className="mt-2.5 font-sans text-[10px] sm:text-[11px] leading-relaxed uppercase track-mid text-white/45">{l}</div>
                 </div>
               ))}
             </div>
@@ -980,16 +1035,6 @@ function Why({ dest }) {
                 alt={dest.lifeShots[1].alt}
                 className="h-full w-full object-cover"
               />
-            </div>
-            <div className="absolute -top-4 -right-2 sm:-right-8 max-w-[15rem] bg-ink/90 backdrop-blur-md
-                            border-l-2 border-brand-yellow px-5 py-4">
-              <Quote size={15} className="text-brand-yellow mb-2" strokeWidth={1.5} />
-              <p className="font-display italic text-[16px] leading-snug text-white/90">
-                Deal-making, not networking.
-              </p>
-              <p className="mt-2 font-sans text-[10px] uppercase track-mid text-white/40">
-                How we brief the room
-              </p>
             </div>
           </div>
         </div>
@@ -1115,7 +1160,7 @@ function TheRoom({ dest }) {
 
         <div className="mt-20 sm:mt-28 grid lg:grid-cols-[0.85fr_1fr] gap-14 lg:gap-20 items-center">
           <div className="reveal">
-            <Eyebrow className="mb-5">{dest.flag} {dest.tag} · the fifty we invite</Eyebrow>
+            <Eyebrow className="mb-5">{dest.tag} · the fifty we invite</Eyebrow>
             <h3 className="font-display text-3xl sm:text-[2.7rem] font-light leading-[1.06] text-white">
               Fifty C-level guests attend on us, so the fifty who pay have someone to meet.
             </h3>
@@ -1125,11 +1170,11 @@ function TheRoom({ dest }) {
               being in.
             </p>
           </div>
-          <div className="reveal grid sm:grid-cols-3 gap-px bg-white/10" style={{ transitionDelay: '120ms' }}>
+          <div className="reveal grid grid-cols-3 gap-px bg-white/10" style={{ transitionDelay: '120ms' }}>
             {dest.target.map((t) => (
-              <div key={t.label} className="bg-[var(--ground-2)] p-7">
-                <div className="font-display text-5xl font-light text-brand-yellow num">{t.n}</div>
-                <div className="mt-3 font-sans text-[13px] text-white/80">{t.label}</div>
+              <div key={t.label} className="bg-[var(--ground-2)] px-4 py-6 sm:p-7">
+                <div className="font-display text-[2.6rem] sm:text-5xl font-light text-brand-yellow num leading-none">{t.n}</div>
+                <div className="mt-4 font-sans text-[13px] text-white/80">{t.label}</div>
                 <div className="mt-1.5 font-sans text-[11.5px] font-light leading-snug text-white/45">{t.note}</div>
               </div>
             ))}
@@ -1184,19 +1229,21 @@ function WhoIsIn({ dest }) {
               className={`flex w-max items-center ${ri % 2 ? 'rail-slow' : 'rail'}`}
               style={ri % 2 ? { animationDirection: 'reverse' } : undefined}
             >
+              {/* Not lazy-loaded: tiles slide in from outside a clipped rail, so
+                  lazy images arrive late and read as empty boxes. */}
               {[...row, ...row].map(([file, name], i) => (
                 <div
                   key={`${file}-${i}`}
                   className="shrink-0 mx-3 sm:mx-5 h-16 sm:h-20 w-32 sm:w-44 grid place-items-center
                              bg-white/[0.04] border border-white/[0.07] px-4 sm:px-6
+                             [--logo-k:40px] sm:[--logo-k:52px]
                              hover:bg-white/[0.09] hover:border-brand-yellow/30 transition-colors duration-400"
                   title={name}
                 >
-                  <img
+                  <WallLogo
                     src={asset(`${dest.logoDir}/${file}.png`)}
                     alt={name}
-                    loading="lazy"
-                    className="max-h-9 sm:max-h-11 w-auto max-w-full object-contain
+                    className="max-h-9 sm:max-h-11 max-w-full
                                opacity-90 [filter:brightness(0)_invert(1)] mix-blend-screen"
                   />
                 </div>
@@ -1241,6 +1288,13 @@ function WhoIsIn({ dest }) {
    05 · Three days
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* "Monday 11 October" → its parts, so the day can be set as a dated tile.
+   Anything in another shape is rendered exactly as written. */
+function splitDate(s) {
+  const m = /^(\S+)\s+(\d{1,2})\s+(.+)$/.exec(s)
+  return m ? { weekday: m[1], day: m[2], month: m[3] } : null
+}
+
 function ThreeDays({ dest }) {
   return (
     <Section id="days" className="overflow-hidden">
@@ -1255,9 +1309,9 @@ function ThreeDays({ dest }) {
           eyebrow="The programme"
           title="Three days, two nights, one guest list."
           aside={
-            <div className="font-sans sm:text-right">
-              <div className="text-[11px] uppercase track-mid text-white/40">{dest.flag} {dest.tag}</div>
-              <div className="mt-1.5 font-display text-2xl sm:text-3xl font-light text-brand-yellow">
+            <div className="font-sans lg:text-right">
+              <div className="text-[11px] uppercase track-mid text-white/40">{dest.tag}</div>
+              <div className="mt-1.5 font-display text-2xl sm:text-3xl font-light text-brand-yellow num">
                 {dest.dates}
               </div>
               <div className="mt-1 text-[12.5px] font-light text-white/50">{dest.venue}</div>
@@ -1265,35 +1319,76 @@ function ThreeDays({ dest }) {
           }
         />
 
-        <div className="mt-14 sm:mt-20 grid md:grid-cols-3 gap-px bg-white/10">
-          {dest.days.map((day, i) => (
-            <div
-              key={day.n}
-              className="reveal bg-[var(--ground)]/92 backdrop-blur-sm p-8 sm:p-10"
-              style={{ transitionDelay: `${i * 120}ms` }}
-            >
-              <div className="flex items-baseline gap-4">
-                <span className="font-display text-6xl sm:text-7xl font-light text-brand-yellow/35 num leading-none">
-                  0{day.n}
-                </span>
-                <div>
-                  <div className="font-sans text-[10px] uppercase track-wide text-white/40">Day {day.n}</div>
-                  <div className="mt-1 font-sans text-[13px] text-white/85">{day.date}</div>
-                </div>
-              </div>
-              <ul className="mt-8 space-y-3.5">
-                {day.items.map((it) => (
-                  <li key={it} className="flex items-start gap-3">
-                    <span className="mt-[7px] h-1 w-1 rounded-full bg-brand-yellow shrink-0" />
-                    <span className="font-sans text-[14px] font-light leading-snug text-white/70">{it}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+        {/* A timeline, not three cards: on desktop a rail joins the three days
+            and each day drops its own spine; on a phone the spine runs
+            unbroken from arrival to check-out. */}
+        <div className="relative mt-14 sm:mt-20">
+          <span
+            aria-hidden="true"
+            className="hidden md:block absolute left-[7px] right-0 top-[7px] h-px
+                       bg-gradient-to-r from-white/25 via-white/15 to-transparent"
+          />
+          <ol className="grid md:grid-cols-3 md:gap-x-10 lg:gap-x-14">
+            {dest.days.map((day, i) => {
+              const d = splitDate(day.date)
+              const last = i === dest.days.length - 1
+              return (
+                <li
+                  key={day.n}
+                  className={`reveal relative pl-10 md:self-start ${last ? '' : 'pb-14 md:pb-0'}`}
+                  style={{ transitionDelay: `${i * 120}ms` }}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`absolute left-[7px] top-[7px] w-px bg-white/15 ${last ? 'bottom-2.5' : 'bottom-0 md:bottom-2.5'}`}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-0 top-0 grid h-[15px] w-[15px] place-items-center rounded-full
+                               border border-brand-yellow bg-[var(--ground)]"
+                  >
+                    <span className="h-[5px] w-[5px] rounded-full bg-brand-yellow" />
+                  </span>
+  
+                  <div className="md:pt-10">
+                    <div className="font-sans text-[10px] leading-[15px] uppercase track-wide text-brand-yellow">
+                      Day {day.n}
+                    </div>
+                    {d ? (
+                      <div className="mt-4 flex items-end gap-3.5">
+                        <span className="font-display text-[3.5rem] sm:text-[4.2rem] font-light leading-[0.78] text-white num">
+                          {d.day}
+                        </span>
+                        <span className="pb-px">
+                          <span className="block font-sans text-[15px] leading-tight text-white/90">{d.weekday}</span>
+                          <span className="mt-1 block font-sans text-[10.5px] leading-tight uppercase track-mid text-white/45">
+                            {d.month}
+                          </span>
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="mt-3 font-sans text-[15px] text-white/90">{day.date}</div>
+                    )}
+                  </div>
+  
+                  <ul className="mt-8 space-y-3.5">
+                    {day.items.map((it) => (
+                      <li key={it} className="relative font-sans text-[14.5px] font-light leading-snug text-white/75">
+                        <span
+                          aria-hidden="true"
+                          className="absolute -left-[35px] top-[0.7em] h-[5px] w-[5px] -translate-y-1/2 rounded-full bg-white/45"
+                        />
+                        {it}
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              )
+            })}
+          </ol>
         </div>
 
-        <div className="mt-12 grid sm:grid-cols-3 gap-8">
+        <div className="mt-16 sm:mt-20 pt-12 border-t border-white/10 grid sm:grid-cols-3 gap-8">
           {[
             [Mic, 'Content that operators front', 'Operator and influencer speakers on the agenda, with strong C-level representation on stage. Interactive, workshop and roundtable formats — not a lecture theatre.'],
             [ShieldCheck, 'Chatham House Rule', 'Every session is off the record, which is why the answers are candid and the room says what it actually thinks.'],
@@ -1315,39 +1410,44 @@ function ThreeDays({ dest }) {
    06 · Partnerships
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* Six rows, the same in every card. On desktop the cards are subgrids of one
+   shared row set (row-span-6 must match the number of direct children), so
+   the price, the spec line, the list and the button sit at the same height
+   across all three however long each name, promise or list runs. */
 function PackageCard({ pkg, onAdd, inCart, featured }) {
   return (
     <div
-      className={`reveal relative flex flex-col p-8 sm:p-10 transition-colors duration-500
+      className={`reveal relative flex flex-col p-8 sm:p-10 lg:p-8 xl:p-10 transition-colors duration-500
+                  lg:grid lg:grid-rows-subgrid lg:row-span-6 lg:gap-y-0
                   ${featured
                     ? 'bg-[var(--ground-2)] ring-1 ring-brand-yellow/35'
                     : 'bg-[var(--ground)] hover:bg-[var(--ground-2)]'}`}
     >
       {featured && <div className="absolute top-0 inset-x-0 h-[2px] bg-brand-yellow" />}
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-h-[8.5rem] sm:min-h-[9.5rem]">
-          {pkg.exclusive && (
-            <div className="mb-3 inline-flex items-center gap-1.5 font-sans text-[10px] uppercase track-mid
-                            text-brand-yellow border border-brand-yellow/35 rounded-full px-2.5 py-1">
-              <Crown size={11} strokeWidth={1.5} /> Exclusive
-            </div>
-          )}
-          <h3 className="font-display text-[2rem] sm:text-[2.3rem] font-light leading-none text-white">
-            {pkg.name}
-          </h3>
-          <p className="mt-3 font-display italic text-[17px] text-brand-yellow">{pkg.line}</p>
-        </div>
-        <div className="text-right shrink-0">
-          <div className="font-display text-3xl sm:text-4xl font-light text-white num leading-none">
-            {eur(pkg.price)}
-          </div>
-          <div className="mt-2 font-sans text-[10px] uppercase track-mid text-white/40">{pkg.kicker}</div>
-        </div>
+
+      <div className="flex min-h-[24px] items-center justify-between gap-3">
+        <span className="font-sans text-[10px] uppercase track-mid text-white/45">{pkg.kicker}</span>
+        {pkg.exclusive && (
+          <span className="inline-flex items-center gap-1.5 font-sans text-[10px] uppercase track-mid
+                           text-brand-yellow border border-brand-yellow/35 rounded-full px-2.5 py-1">
+            <Crown size={11} strokeWidth={1.5} /> Exclusive
+          </span>
+        )}
       </div>
 
-      <Rule className="my-7 opacity-50" />
+      <div className="mt-7">
+        <h3 className="font-display text-[2rem] lg:text-[1.9rem] xl:text-[2.3rem] font-light leading-[1.05] text-white">
+          {pkg.name}
+        </h3>
+        <p className="mt-3 font-display italic text-[17px] leading-snug text-brand-yellow">{pkg.line}</p>
+      </div>
 
-      <div className="flex items-center gap-6 font-sans text-[12px] text-white/60">
+      <div className="mt-9 font-display text-[2.75rem] sm:text-5xl font-light text-white num leading-none">
+        {eur(pkg.price)}
+      </div>
+
+      <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-white/10 py-3.5
+                      font-sans text-[12px] text-white/65">
         <span className="inline-flex items-center gap-2">
           <Ticket size={14} className="text-brand-yellow" strokeWidth={1.5} />
           {pkg.passes} all-inclusive pass{pkg.passes === 1 ? '' : 'es'}
@@ -1437,9 +1537,12 @@ function ActivityCard({ addon, dest, onAdd, count, locked, i }) {
   const local = dest.activities[addon.id]
   const Icon = addon.icon
   const imgs = local.imgs || []
+  // Same shared-row idea as the package cards: five rows (photo, name, local
+  // title, blurb, action) so a name that wraps never staggers the text below.
   return (
     <div
-      className="reveal group relative flex flex-col bg-[var(--ground)] overflow-hidden"
+      className="reveal group relative flex flex-col bg-[var(--ground)] overflow-hidden
+                 md:grid md:grid-rows-subgrid md:row-span-5 md:gap-y-0"
       style={{ transitionDelay: `${i * 110}ms` }}
     >
       <div className="relative h-52 sm:h-60 overflow-hidden">
@@ -1463,31 +1566,35 @@ function ActivityCard({ addon, dest, onAdd, count, locked, i }) {
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[var(--ground)] via-transparent to-transparent" />
-        <div className="absolute top-5 left-5 flex items-center gap-2 bg-ink/75 backdrop-blur-sm px-3 py-1.5">
-          <Icon size={13} className="text-brand-yellow" strokeWidth={1.5} />
-          <span className="font-sans text-[10px] uppercase track-mid text-white/80">{addon.kicker}</span>
-        </div>
-        {/* Price rides the photograph, so a long product name never fights it */}
-        <div className="absolute top-4 right-4 bg-ink/75 backdrop-blur-sm px-3 py-1
-                        font-display text-2xl sm:text-[1.7rem] font-light leading-tight text-white num">
-          {eur(addon.price)}
+        {/* Price rides the photograph, so a long product name never fights it.
+            Kicker and price share one row; on a narrow card the price drops
+            beneath the kicker instead of covering it. */}
+        <div className="absolute inset-x-4 top-4 flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 bg-ink/75 backdrop-blur-sm px-3 py-1.5">
+            <Icon size={13} className="text-brand-yellow" strokeWidth={1.5} />
+            <span className="font-sans text-[10px] uppercase track-mid text-white/80 whitespace-nowrap">{addon.kicker}</span>
+          </div>
+          <div className="ml-auto bg-ink/75 backdrop-blur-sm px-3 py-1
+                          font-display text-2xl sm:text-[1.7rem] font-light leading-tight text-white num">
+            {eur(addon.price)}
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col p-7 sm:p-8">
-        <h3 className="font-display text-[1.6rem] sm:text-[1.85rem] font-light leading-tight text-white">
-          {addon.name}
-        </h3>
-        <p className="mt-3.5 font-display italic text-[16px] leading-snug text-brand-yellow">
-          {local.title}
-        </p>
-        <p className="mt-3.5 font-sans text-[13.5px] font-light leading-relaxed text-white/55 flex-1">
-          {local.blurb}
-        </p>
+      <h3 className="px-7 sm:px-8 pt-7 sm:pt-8 md:self-end font-display text-[1.6rem] sm:text-[1.85rem] font-light leading-tight text-white">
+        {addon.name}
+      </h3>
+      <p className="px-7 sm:px-8 mt-3.5 font-display italic text-[16px] leading-snug text-brand-yellow">
+        {local.title}
+      </p>
+      <p className="px-7 sm:px-8 mt-3.5 font-sans text-[13.5px] font-light leading-relaxed text-white/55 flex-1">
+        {local.blurb}
+      </p>
+      <div className="px-7 sm:px-8 pt-7 pb-7 sm:pb-8">
         <button
           onClick={() => onAdd(addon)}
           disabled={locked || count >= addon.avail}
-          className={`mt-7 inline-flex items-center justify-center gap-2 w-full py-3.5 font-sans text-[12px]
+          className={`inline-flex items-center justify-center gap-2 w-full py-3.5 font-sans text-[12px]
                       uppercase track-mid transition
                       ${locked || count >= addon.avail
                         ? 'bg-white/[0.06] text-white/35 cursor-not-allowed'
@@ -1554,7 +1661,9 @@ function Builder({ dest, cart, setCart }) {
 
   return (
     <Section id="build" className="overflow-hidden">
-      <div className="absolute inset-0">
+      {/* Faded at both edges so the backdrop dissolves into the page's sea
+          atmosphere instead of cutting a hard line across the page. */}
+      <div className="absolute inset-0 edge-fade-y">
         <img
           src={asset(dest.resortShots[dest.resortShots.length - 1].src)}
           alt=""
@@ -1576,7 +1685,7 @@ function Builder({ dest, cart, setCart }) {
         <div className="reveal mt-14 border border-white/12 bg-ink/60 backdrop-blur-xl">
           <div className="px-6 sm:px-9 py-5 border-b border-white/10 flex items-center justify-between gap-4">
             <div className="font-sans text-[11px] uppercase track-mid text-white/45">
-              {dest.flag} Retreat {dest.tag} 2027 · {dest.datesTight}
+              Retreat {dest.tag} 2027 · <span className="whitespace-nowrap num">{dest.datesTight}</span>
             </div>
             {cart.length > 0 && (
               <button
@@ -1699,7 +1808,9 @@ function Builder({ dest, cart, setCart }) {
    ═══════════════════════════════════════════════════════════════════════════ */
 
 function Partners2026() {
-  const fillers = (5 - (PARTNERS_2026.length % 5)) % 5
+  // Three across at every width: nine partners make a full 3 × 3 with no
+  // orphan tile. Fillers only appear if the list stops being a multiple of 3.
+  const fillers = (3 - (PARTNERS_2026.length % 3)) % 3
   return (
     <Section id="partners" className="overflow-hidden">
       <Shell>
@@ -1709,26 +1820,25 @@ function Partners2026() {
           title="The brands that backed the 2026 retreats."
           lede="Headline and general partners across Cyprus and Cancún."
         />
-        <div className="reveal mt-14 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-px bg-white/[0.08]">
+        <div className="reveal mt-14 grid grid-cols-3 gap-px bg-white/[0.08]">
           {PARTNERS_2026.map(([file, name], i) => (
             <div
               key={file}
-              className="bg-[var(--ground)] h-28 sm:h-32 grid place-items-center px-6
+              className="bg-[var(--ground)] h-24 sm:h-32 lg:h-36 grid place-items-center px-3 sm:px-8
+                         [--logo-k:40px] sm:[--logo-k:58px] lg:[--logo-k:66px]
                          hover:bg-[var(--ground-2)] transition-colors duration-500"
               style={{ transitionDelay: `${i * 50}ms` }}
               title={name}
             >
-              <img
+              <WallLogo
                 src={asset(`logos/partners/${file}.png`)}
                 alt={name}
-                loading="lazy"
-                className="max-h-8 sm:max-h-10 w-auto max-w-[80%] object-contain opacity-85
-                           hover:opacity-100 transition-opacity"
+                className="max-h-9 sm:max-h-12 lg:max-h-14 max-w-full opacity-85 hover:opacity-100 transition-opacity"
               />
             </div>
           ))}
           {Array.from({ length: fillers }).map((_, i) => (
-            <div key={`fill-${i}`} className="hidden lg:block bg-[var(--ground)]" aria-hidden="true" />
+            <div key={`fill-${i}`} className="bg-[var(--ground)]" aria-hidden="true" />
           ))}
         </div>
       </Shell>
@@ -1775,7 +1885,7 @@ function BothRetreats({ destId, setDestId }) {
                 <div className="caustics opacity-40" />
                 <div className="relative h-full p-8 sm:p-11 flex flex-col justify-end">
                   <div className="font-sans text-[11px] uppercase track-wide text-brand-yellow">
-                    {d.flag} Retreat {d.tag} · {d.edition}
+                    Retreat {d.tag} · {d.edition}
                   </div>
                   <h3 className="mt-4 font-display text-[2.4rem] sm:text-[3.2rem] font-light leading-[0.98] text-white">
                     {d.place}
@@ -1803,16 +1913,19 @@ function Close({ dest }) {
   const { d } = useCountdown(dest.id === 'europe' ? '2027-10-11T09:00:00Z' : '2027-11-15T09:00:00Z')
   return (
     <section className="relative overflow-hidden">
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 [mask-image:linear-gradient(to_bottom,transparent,#000_22%)]">
         <img src={asset(dest.hero)} alt="" aria-hidden="true" className="h-full w-full object-cover opacity-25" />
         <div className="absolute inset-0 bg-gradient-to-b from-[var(--ground)] via-ink/90 to-ink" />
         <div className="caustics" />
       </div>
-      <Chevrons className="absolute left-0 top-1/2 -translate-y-1/2 h-[48vh] w-[18vw] rotate-180 text-brand-yellow/[0.10] hidden sm:block" />
+      {/* Only where the margin is wide enough to hold it clear of the headline */}
+      <Chevrons className="absolute left-0 top-1/2 -translate-y-1/2 h-[44vh] w-[11vw] rotate-180 text-brand-yellow/[0.10] hidden 2xl:block" />
 
       <Shell className="relative py-28 sm:py-44 text-center">
         <div className="reveal">
-          <Eyebrow className="mb-8">{dest.flag} {dest.venue} · {dest.dates}</Eyebrow>
+          <Eyebrow className="mb-8">
+            {dest.venue} · <span className="whitespace-nowrap num">{dest.dates}</span>
+          </Eyebrow>
           <h2 className="font-display font-light text-white leading-[0.98] tracking-[-0.015em]
                          text-[2.7rem] sm:text-[4.4rem] lg:text-[5.6rem] max-w-[24ch] mx-auto">
             There are only
@@ -1823,17 +1936,17 @@ function Close({ dest }) {
             One headline partnership. Ten general partnerships. Twenty-one individual
             tickets. Five leisure slots. {d > 0 ? `${d.toLocaleString('en-US')} days out.` : ''}
           </p>
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-4">
+          <div className="mt-12 mx-auto flex max-w-xs flex-col items-stretch gap-3 sm:max-w-none sm:flex-row sm:items-center sm:justify-center sm:gap-4">
             <a
               href="mailto:sales@next.io?subject=NEXT.io%20Retreats%202027%20%E2%80%94%20partnership%20enquiry"
-              className="inline-flex items-center gap-2.5 bg-brand-yellow px-7 py-4 font-sans text-[12px]
+              className="inline-flex items-center justify-center gap-2.5 bg-brand-yellow px-7 py-4 font-sans text-[12px]
                          uppercase track-mid text-brand-dark font-medium hover:brightness-110 transition"
             >
               <Mail size={15} strokeWidth={1.75} /> sales@next.io
             </a>
             <a
               href="#build"
-              className="inline-flex items-center gap-2.5 border border-white/25 px-7 py-4 font-sans text-[12px]
+              className="inline-flex items-center justify-center gap-2.5 border border-white/25 px-7 py-4 font-sans text-[12px]
                          uppercase track-mid text-white hover:border-brand-yellow hover:text-brand-yellow transition"
             >
               Build a package <ArrowRight size={14} strokeWidth={1.75} />
@@ -1855,10 +1968,19 @@ function Footer() {
         <div className="flex flex-wrap gap-10 justify-between">
           <div>
             <Lockup className="h-10" />
-            <p className="mt-5 font-sans text-[12.5px] font-light leading-relaxed text-white/45 max-w-[40ch]">
-              Retreat Europe · Cap St Georges Hotel &amp; Resort, Cyprus · 11–13 October 2027<br />
-              Retreat LatAm · Secrets Maroma Beach Riviera Cancun, Mexico · 15–17 November 2027
-            </p>
+            {/* The two editions as two dated entries, not one run-on line each */}
+            <dl className="mt-7 grid gap-6 sm:grid-cols-2 sm:gap-12 font-sans text-[12.5px] font-light leading-relaxed">
+              {[
+                ['Retreat Europe', 'Cap St Georges Hotel & Resort, Cyprus', '11–13 October 2027'],
+                ['Retreat LatAm', 'Secrets Maroma Beach Riviera Cancun, Mexico', '15–17 November 2027'],
+              ].map(([name, venue, dates]) => (
+                <div key={name} className="max-w-[44ch]">
+                  <dt className="text-[10px] uppercase track-mid text-brand-yellow/80">{name}</dt>
+                  <dd className="mt-2 text-white/75 num">{dates}</dd>
+                  <dd className="text-white/45">{venue}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
           <div className="font-sans text-[12.5px] font-light text-white/45 space-y-2">
             <div><a href="mailto:sales@next.io" className="hover:text-brand-yellow transition">sales@next.io</a></div>

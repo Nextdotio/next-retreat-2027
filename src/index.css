@@ -221,6 +221,12 @@
   html { scroll-behavior: auto; }
 }
 
+/* Printing the page itself: sections the reader never scrolled to have not
+   revealed yet, so without this they would print as blank space. */
+@media print {
+  .reveal, .reveal-scale { opacity: 1 !important; transform: none !important; transition: none !important; }
+}
+
 /* Firefox/older-engine fallback: if color-mix is unsupported the gradients
    above collapse to transparent, which is a graceful no-op. */
 
