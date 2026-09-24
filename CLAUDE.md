@@ -104,3 +104,20 @@ Confirm it prints `Published` before reporting done. Publishes to
   internal framing, no data-handling caveats, no references to source decks.
 - Provenance for every figure, and the open questions, are in `DATA_SOURCES.md`.
   Read it before changing a number.
+
+## Navigation (23 Sep 2026)
+
+- The first screen carries the offer: `HeroPrices` in the hero lists every
+  `PACKAGES` item (price, availability, passes) and the leisure range from
+  `ADDONS`, always stated with `ADDON_CONDITION`. It is a summary read from
+  those arrays, so it never needs editing by hand. Rows link to their cards
+  (`#partner-<id>`), the CTA to `#partner`; the rate-card button and the
+  leisure line follow the destination switch.
+- Section order is unchanged (the narrative above); the hero panel and the
+  header do the navigating. Below xl the header has a Prices link (the
+  second row on a phone) and a menu with the same sections as `NAV`.
+- Anchors land by measurement: `Nav` writes the header bar's height into
+  `--nav-h` (ResizeObserver); `.jump` / `.jump-card` in `index.css` use it
+  as scroll-margin. Never hardcode a nav offset.
+- Deep links: `?retreat=latam` opens LatAm (the address follows the switch),
+  and a `#hash` is landed after render, e.g. `?retreat=latam#partner-general`.

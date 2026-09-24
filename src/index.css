@@ -41,11 +41,20 @@
   --font-sans: 'Jost', ui-sans-serif, system-ui, sans-serif;
 }
 
+/* The fixed header's height, measured by <Nav> (a ResizeObserver writes the
+   exact value onto <html>). These are only the first-paint fallbacks: two
+   rows below md, one row from md up. Anchored sections and the hero's top
+   padding read it, so nothing hardcodes a header height. */
+:root { --nav-h: 106px; }
+@media (min-width: 768px) { :root { --nav-h: 80px; } }
+
 @layer base {
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
   }
+  /* Body copy never ends on a single stranded word. */
+  p { text-wrap: pretty; }
   body {
     background-color: #1c1c1f;
     color: #ffffff;
@@ -212,6 +221,26 @@
   .track-mid {
     letter-spacing: 0.2em;
   }
+
+  /* Anchor landings. A section starts exactly at the header's bottom edge
+     (its own top padding is the breathing room); a single card or panel
+     keeps a small gap. Both follow the measured --nav-h. */
+  .jump {
+    scroll-margin-top: var(--nav-h);
+  }
+  .jump-card {
+    scroll-margin-top: calc(var(--nav-h) + 1rem);
+  }
+}
+
+/* The phone / tablet menu drops in from under the header. */
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+.menu-in { animation: menuIn 0.28s cubic-bezier(0.16, 1, 0.3, 1); }
+@media (prefers-reduced-motion: reduce) {
+  .menu-in { animation: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
