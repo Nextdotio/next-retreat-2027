@@ -72,7 +72,17 @@
     background: #ffcf33;
     color: #242426;
   }
+  /* Keyboard focus is always visible, in the one accent (a mouse click on a
+     button does not trigger :focus-visible, so pointer use is unchanged). */
+  :focus-visible {
+    outline: 2px solid #ffcf33;
+    outline-offset: 3px;
+  }
 }
+
+/* Present mode: each slide slides in from the side it came from. */
+@keyframes pm-in-fwd { from { opacity: 0; transform: translateX(24px) } to { opacity: 1; transform: none } }
+@keyframes pm-in-back { from { opacity: 0; transform: translateX(-24px) } to { opacity: 1; transform: none } }
 
 /* ── Destination themes ──────────────────────────────────────────────────
    The brand colours never change between retreats. What changes is the
@@ -166,6 +176,13 @@
   }
   .reveal.in {
     opacity: 1;
+    transform: none;
+  }
+  /* A card that is an anchor target (#partner-headline, #leisure-pool) fades
+     in without the rise. A landing is measured while the card is still
+     waiting to reveal, so the 26px rise used to carry it up under the header
+     afterwards; without it, every landing rests where its scroll margin says. */
+  .jump-card.reveal {
     transform: none;
   }
   .reveal-scale {

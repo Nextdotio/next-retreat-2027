@@ -25,9 +25,10 @@ Live: https://nextdotio.github.io/next-retreat-2027/
 
 | Path | What |
 |---|---|
-| `src/App.jsx` | All content and components — destinations, products, copy |
+| `src/App.jsx` | All content and components — destinations, products, copy, and the presentation's slides |
+| `src/PresentMode.jsx` | Present mode (`?present`) and the copy-link helpers; no content |
 | `src/index.css` | Design tokens, the two destination themes, water/grain effects |
-| `src/fonts/` | Self-hosted Cormorant Garamond + Jost (no CDN at runtime) |
+| `src/fonts/` | Self-hosted Jost (no CDN at runtime) |
 | `public/images/` | Event and resort photography |
 | `public/logos/attendees/` | 2026 attendee company marks, per destination |
 | `public/logos/partners/` | 2026 headline and general partner marks |
