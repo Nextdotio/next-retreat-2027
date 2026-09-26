@@ -280,7 +280,7 @@ const PACKAGES = [
     avail: 21,
     passes: 1,
     kicker: 'Twenty-one per retreat',
-    line: 'One pass. The full three days.',
+    line: 'One seat in a room of a hundred, for all three days.',
     deliverables: [
       '1 all-inclusive delegate pass',
       'Two nights at the host resort',
