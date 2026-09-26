@@ -109,12 +109,12 @@ const DESTINATIONS = {
     activities: {
       'yacht-golf': {
         title: 'Golf or padel tournament, or a day on the water',
-        blurb: 'The flagship leisure slot. A golf or padel tournament, or a boat day along the Akamas coast — your brand hosts it end to end.',
+        blurb: 'The flagship leisure slot. A golf or padel tournament, or a boat day along the Akamas coast. Your brand hosts it end to end.',
         imgs: [{ src: 'images/cyprus-padel.jpg', alt: 'Padel tournament at Cap St Georges' }],
       },
       tasting: {
         title: 'Wine tasting in the hills, buggies through the Akamas',
-        blurb: 'Two curated experiences off the resort — a hosted tasting at a Cypriot vineyard and an off-road buggy run. Small groups, long conversations.',
+        blurb: 'Two curated experiences off the resort: a hosted tasting at a Cypriot vineyard and an off-road buggy run. Small groups, long conversations.',
         imgs: [
           { src: 'images/cyprus-wine-vineyard.jpg', alt: 'Wine tasting overlooking a Cypriot vineyard' },
           { src: 'images/cyprus-buggies.jpg', alt: 'Off-road buggy on a coastal trail in Cyprus' },
@@ -122,7 +122,7 @@ const DESTINATIONS = {
       },
       pool: {
         title: 'Sport and slow hours by the pool',
-        blurb: 'The most relaxed real estate at the retreat. Poolside sessions, morning movement, sunrise swims — branded, hosted and impossible to walk past.',
+        blurb: 'The most relaxed real estate at the retreat. Poolside sessions, morning movement and sunrise swims. Branded, hosted and impossible to walk past.',
         imgs: [],
       },
     },
@@ -220,7 +220,7 @@ const DESTINATIONS = {
       },
       tasting: {
         title: 'Tequila tasting and the cenotes',
-        blurb: 'Two curated experiences with a local anchor — a hosted tasting at the resort and a guided swim in a Yucatán cenote. Small groups, long conversations.',
+        blurb: 'Two curated experiences with a local anchor: a hosted tasting at the resort and a guided swim in a Yucatán cenote. Small groups, long conversations.',
         imgs: [
           { src: 'images/cancun-tequila-tasting.jpg', alt: 'Hosted tequila tasting for delegates' },
           { src: 'images/cancun-cenote.jpg', alt: 'Delegates at a Yucatán cenote' },
@@ -248,7 +248,7 @@ const PACKAGES = [
     kicker: 'One per retreat',
     line: 'The retreat carries your name.',
     deliverables: [
-      'NEXT Retreat “presented by…” — your name on the event itself',
+      'NEXT Retreat “presented by…”: your name on the event itself',
       'Speaker opportunity',
       'Headline branding pre, during and post event',
       '4 all-inclusive tickets',
@@ -286,7 +286,7 @@ const PACKAGES = [
       'Two nights at the host resort',
       'Full programme: content sessions, networking breakfasts, lunches and dinners',
       'Leisure programme alongside the rest of the room',
-      'No branding or speaking rights — those sit with the partnerships above',
+      'No branding or speaking rights: those sit with the partnerships above',
     ],
   },
 ]
@@ -677,7 +677,7 @@ function exportProposal(dest, cart) {
     </p>
   </section>`
   openPrintable(printShell(
-    `Retreat ${dest.tag} 2027 — Partnership Proposal`,
+    `Retreat ${dest.tag} 2027 - Partnership Proposal`,
     `${esc(dest.dates)} &nbsp;·&nbsp; ${esc(dest.venue)}, ${esc(dest.place)} &nbsp;·&nbsp; Prepared ${today()}`,
     body,
   ))
@@ -709,7 +709,7 @@ function exportRateCard(dest) {
     <section><h2>The room</h2>
       <div class="item">
         <ul>
-          <li>100 delegates, capped — an even 50 operators / 50 suppliers split</li>
+          <li>100 delegates, capped: an even 50 operators / 50 suppliers split</li>
           <li>83% C-level, 17% senior management</li>
           <li>52% operators, 35% service providers, 10% investors, 3% associations</li>
           <li>All content under Chatham House Rule</li>
@@ -719,7 +719,7 @@ function exportRateCard(dest) {
       </div>
     </section>`
   openPrintable(printShell(
-    `Retreat ${dest.tag} 2027 — Rate Card`,
+    `Retreat ${dest.tag} 2027 - Rate Card`,
     `${esc(dest.dates)} &nbsp;·&nbsp; ${esc(dest.venue)}, ${esc(dest.place)} &nbsp;·&nbsp; Generated ${today()}`,
     body,
     { addonTerms: false },
@@ -727,15 +727,15 @@ function exportRateCard(dest) {
 }
 
 function buildMailto(dest, cart) {
-  const subject = `NEXT Retreat ${dest.tag} 2027 — partnership enquiry`
+  const subject = `NEXT Retreat ${dest.tag} 2027: partnership enquiry`
   if (!cart.length) return `mailto:sales@next.io?subject=${encodeURIComponent(subject)}`
   const total = cart.reduce((s, l) => s + l.price * l.qty, 0)
   const body = [
-    `NEXT Retreat ${dest.tag} 2027 — ${dest.dates}`,
+    `NEXT Retreat ${dest.tag} 2027, ${dest.dates}`,
     `${dest.venue}, ${dest.place}`,
     '',
     'Interested in:',
-    ...cart.map((l) => `· ${l.name}${l.qty > 1 ? ` x${l.qty}` : ''} — ${eur(l.price * l.qty)}`),
+    ...cart.map((l) => `· ${l.name}${l.qty > 1 ? ` x${l.qty}` : ''}: ${eur(l.price * l.qty)}`),
     '',
     `Total: ${eur(total)} (excl. VAT)`,
     '',
@@ -1403,12 +1403,12 @@ function Why({ dest }) {
               n="02"
               eyebrow="Why it works"
               wide
-              title={<>Suppliers get the one thing a trade floor never gives them —<span className="italic text-brand-yellow"> unhurried time with the decision-maker.</span></>}
+              title={<>Suppliers get the one thing a trade floor never gives them:<span className="italic text-brand-yellow"> unhurried time with the decision-maker.</span></>}
             />
             <div className="reveal mt-9 space-y-5 font-sans text-[15px] sm:text-[17px] font-light leading-relaxed text-white/65 max-w-[54ch]">
               <p>
                 At a conference you get ninety seconds at a stand. Here you get three
-                days at the same resort as the person who signs — over breakfast, on
+                days at the same resort as the person who signs: over breakfast, on
                 the boat, at the long table after dinner. Half the room runs an
                 operator. The other half supplies them. That ratio is enforced, not
                 hoped for.
@@ -1516,7 +1516,7 @@ const numTone = {
 const ROOM_HEAD = {
   eyebrow: 'The room',
   title: 'A hundred people, chosen one at a time.',
-  lede: (dest) => `${dest.focus} Growth never dilutes the cap — the hundred is the product.`,
+  lede: (dest) => `${dest.focus} Growth never dilutes the cap: the hundred is the product.`,
 }
 
 /* Seniority, composition and how the hundred is built: the same three panels
@@ -1594,7 +1594,7 @@ function TheRoom({ dest }) {
             </h3>
             <p className="mt-5 font-sans text-[14px] font-light leading-relaxed text-white/55 max-w-[46ch]">
               Operators, affiliates and influencers come as guests of NEXT.io. Partner
-              investment is what puts them in the room — and what makes the room worth
+              investment is what puts them in the room, and what makes the room worth
               being in.
             </p>
           </div>
@@ -1639,7 +1639,7 @@ function TheRoom({ dest }) {
 const WHO_HEAD = {
   eyebrow: (dest) => `In the room · ${dest.tag} 2026`,
   title: 'The companies who were already there.',
-  lede: (dest) => `${dest.attendees.length} businesses on the ${dest.tag === 'LatAm' ? 'Cancún' : 'Cyprus'} guest list for 2026 — operators, affiliates, suppliers and investors, sat at the same tables for three days.`,
+  lede: (dest) => `${dest.attendees.length} businesses on the ${dest.tag === 'LatAm' ? 'Cancún' : 'Cyprus'} guest list for 2026: operators, affiliates, suppliers and investors, sat at the same tables for three days.`,
 }
 
 /* Job titles only: never paired back to a company or a name, which is why
@@ -1831,7 +1831,7 @@ function DaysTimeline({ days, reveal = true, className = '' }) {
 }
 
 const FORMAT_NOTES = [
-  [Mic, 'Content that operators front', 'Operator and influencer speakers on the agenda, with strong C-level representation on stage. Interactive, workshop and roundtable formats — not a lecture theatre.'],
+  [Mic, 'Content that operators front', 'Operator and influencer speakers on the agenda, with strong C-level representation on stage. Interactive, workshop and roundtable formats, not a lecture theatre.'],
   [ShieldCheck, 'Chatham House Rule', 'Every session is off the record, which is why the answers are candid and the room says what it actually thinks.'],
   [BadgeCheck, 'Matched a month out', 'Personalised onboarding and meeting matchmaking completed one month before arrival. First-timers leave with a network; returners leave with fresh contacts.'],
 ]
@@ -1870,8 +1870,8 @@ function ThreeDays({ dest }) {
 const PARTNER_HEAD = {
   eyebrow: 'Partnerships & tickets',
   title: 'Three ways in. Same shoreline.',
-  lede: 'Identical inventory across both retreats — buy Cyprus, Cancún, or both. Prices exclude VAT and every pass is all-inclusive.',
-  note: 'Twenty-four partner passes and twenty-one individual tickets. The remaining fifty-five seats — operators, affiliates, influencers and the advisory board — attend as guests of NEXT.io.',
+  lede: 'Identical inventory across both retreats: buy Cyprus, Cancún, or both. Prices exclude VAT and every pass is all-inclusive.',
+  note: 'Twenty-four partner passes and twenty-one individual tickets. The remaining fifty-five seats (operators, affiliates, influencers and the advisory board) attend as guests of NEXT.io.',
 }
 
 function ExclusiveBadge() {
@@ -2046,7 +2046,7 @@ function Partnerships({ dest, cart, onAdd, onPresent }) {
 const LEISURE_HEAD = {
   eyebrow: (dest) => `Leisure activities · ${dest.place}`,
   title: 'Own the afternoon everyone remembers.',
-  lede: 'The content sessions are where the room learns. The leisure programme is where it relaxes enough to talk properly — and each slot is hosted by a single brand. There are five in total across the three days.',
+  lede: 'The content sessions are where the room learns. The leisure programme is where it relaxes enough to talk properly, and each slot is hosted by a single brand. There are five in total across the three days.',
   extra: 'They are an amplifier on a partnership, not a way in.',
 }
 
