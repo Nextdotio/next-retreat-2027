@@ -177,8 +177,9 @@ and easy to take a buyer through on a call. What exists:
   `AddonCondition` (on every leisure slide, as required). Pitches are the
   card's `line` (packages) and the destination's `activities[id].title` and
   `blurb` (leisure), set upright on a slide: no quote marks, no italics
-  (the cards keep their italic). A package shows every deliverable when only
-  one more line would be hidden, otherwise six and "+ N more on the card".
+  (the cards keep their italic). A package slide shows every deliverable,
+  always, never "+ N more on the card" (Stuart, 26 Sep 2026: "Please do
+  include all deliverables. It's important").
   "Open the card" closes the deck and lands on the card.
 - **Shared section copy**: `VERDICT_HEAD`, `ROOM_HEAD`, `WHO_HEAD`,
   `TITLES_HEAD`, `DAYS_HEAD`, `PARTNER_HEAD`, `LEISURE_HEAD`, `BUILD_HEAD`,

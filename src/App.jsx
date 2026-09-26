@@ -2931,10 +2931,9 @@ const SLIDE_TAGLINE = 'text-balance font-display text-[1.25rem] sm:text-[1.45rem
 function PackageSlide({ slide, ctx }) {
   const pkg = slide.item
   const id = `partner-${pkg.id}`
-  // Every deliverable when the rest would only be one line; otherwise the
-  // first six and a pointer to the card.
-  const shown = pkg.deliverables.length <= 7 ? pkg.deliverables : pkg.deliverables.slice(0, 6)
-  const more = pkg.deliverables.length - shown.length
+  // Every deliverable, always (Stuart, 26 Sep 2026: "Please do include all
+  // deliverables. It's important").
+  const shown = pkg.deliverables
   return (
     <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:gap-14">
       <div className="lg:col-span-7">
@@ -2967,11 +2966,6 @@ function PackageSlide({ slide, ctx }) {
             </li>
           ))}
         </ul>
-        {more > 0 && (
-          <button type="button" onClick={() => ctx.openCard(id)} className={`mt-3 ${SLIDE_QUIET}`}>
-            + {more} more on the card
-          </button>
-        )}
       </div>
     </div>
   )
