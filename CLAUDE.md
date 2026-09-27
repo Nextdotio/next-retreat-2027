@@ -13,7 +13,11 @@ is the presentation machinery and holds no content.
 
 ## Workflow
 
-- Develop on branch `claude/next-retreat-2027-brochures-py826y`.
+- Develop on branch `claude/new-session-h6ajdg`: the live site is built from it
+  (27 Sep 2026). It supersedes `claude/next-retreat-2027-brochures-py826y`, last touched
+  26 Aug 2026 and 10 commits behind; never develop on or deploy from that
+  branch. More than one session works on this branch, so pull before every
+  deploy.
 - Run `npm run build` to verify changes compile.
 - Commit with a clear message and push the branch.
 - Open a fresh PR into `main` only when asked.
