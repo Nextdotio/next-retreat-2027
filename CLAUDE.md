@@ -215,3 +215,15 @@ Rules future edits must keep:
   to carry them 10px under the header after a deep link or an in-page jump.
 - Keyboard focus is a 2px yellow ring (`:focus-visible` in `index.css`).
 
+
+## Decisions after the product-list audit (Stuart, 27 Sep 2026)
+
+- **Operator invitations are suggestions, and capped.** Ten General Partners
+  inviting five operators each would fill the operator half of the room, so
+  a General Partner now suggests up to 2 operator professionals and the
+  Headline up to 5, "for NEXT.io to invite (by approval; an invitation does
+  not guarantee attendance)". Stuart said "two, maybe three": 2 is published
+  because raising a published benefit later is easier than cutting one. Ask
+  him before moving it to 3.
+- **Gifts are the partner's to supply**: "Opportunity to give other
+  attendees a gift, supplied by you and approved by NEXT.io".

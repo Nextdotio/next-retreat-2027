@@ -253,8 +253,8 @@ const PACKAGES = [
       'Headline branding pre, during and post event',
       '4 all-inclusive tickets',
       'Delegate list pre-event (job title + company)',
-      'Opportunity to contribute a gift to other attendees',
-      'Invite up to 5 operator professionals (by approval)',
+      'Opportunity to give other attendees a gift, supplied by you and approved by NEXT.io',
+      'Suggest up to 5 operator professionals for NEXT.io to invite (by approval; an invitation does not guarantee attendance)',
     ],
   },
   {
@@ -269,8 +269,8 @@ const PACKAGES = [
       'Branding pre, during and post event',
       '2 all-inclusive tickets',
       'Delegate list pre-event (job title + company)',
-      'Opportunity to contribute a gift to other attendees',
-      'Invite up to 5 operator professionals (by approval)',
+      'Opportunity to give other attendees a gift, supplied by you and approved by NEXT.io',
+      'Suggest up to 2 operator professionals for NEXT.io to invite (by approval; an invitation does not guarantee attendance)',
     ],
   },
   {
