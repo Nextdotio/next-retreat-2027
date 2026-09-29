@@ -701,6 +701,8 @@ function printShell(title, subtitle, body, { addonTerms = true } = {}) {
   .avail{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:#6b5216;background:#fff6d9;border-radius:3px;padding:3px 8px;white-space:nowrap;margin-left:8px}
   .price{font-size:18px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums lining-nums}
   .line{font-style:italic;color:#61616a;margin:7px 0 9px}
+  .value{font-size:11.5px;font-weight:600;color:#242426;background:#fff6d9;border-left:3px solid #ffcf33;padding:6px 10px;margin:0 0 10px}
+  .basis{font-size:10.5px;color:#82828c;margin:-4px 0 12px}
   ul{padding-left:17px}
   li{margin-bottom:3px;color:#45454d}
   table{width:100%;border-collapse:collapse}
@@ -738,7 +740,8 @@ function exportProposal(dest, cart) {
   const passes = cart.reduce((s, l) => s + (l.passes || 0) * l.qty, 0)
   const rows = cart.map((l) => `<tr>
       <td><div style="font-weight:700">${esc(l.name)}${l.qty > 1 ? ` &times;${l.qty}` : ''}</div>
-      <div style="font-size:11px;color:#82828c;margin-top:2px">${esc(l.group)}</div></td>
+      <div style="font-size:11px;color:#82828c;margin-top:2px">${esc(l.group)}</div>
+      ${PACKAGES.some((p) => p.id === l.id) ? `<div style="font-size:11px;color:#45454d;margin-top:3px">${esc(valueLine(PACKAGES.find((p) => p.id === l.id), dest))}</div>` : ''}</td>
       <td>${eur(l.price * l.qty)}</td></tr>`).join('')
   const body = `<section>
     <h2>Selected inventory</h2>
@@ -748,7 +751,7 @@ function exportProposal(dest, cart) {
     </tbody></table>
     <p style="margin-top:14px;font-size:11.5px;color:#61616a">
       Includes <strong>${passes}</strong> all-inclusive delegate pass${passes === 1 ? '' : 'es'}
-      in a room capped at 100, split evenly between operators and suppliers.
+      in a room capped at 100, split evenly between operators and suppliers. ${esc(valueBasis(dest))}
     </p>
   </section>`
   openPrintable(printShell(
@@ -770,6 +773,7 @@ function exportRateCard(dest) {
       <span class="avail">${p.avail} available · ${p.passes} pass${p.passes === 1 ? '' : 'es'}</span></div>
       <div class="price">${eur(p.price)}</div></div>
       <p class="line">${esc(p.line)}</p>
+      <p class="value">${esc(valueLine(p, dest))}</p>
       <ul>${p.deliverables.map((d) => `<li>${esc(d)}</li>`).join('')}</ul>
     </div>`).join('')
   const adds = ADDONS.map((a) => {
@@ -784,7 +788,7 @@ function exportRateCard(dest) {
   }).join('')
   // The add-on condition is stated once, where it applies, rather than boxed
   // under every activity and repeated again in the footer.
-  const body = `<section><h2>Partnerships &amp; tickets</h2>${pkgs}</section>
+  const body = `<section><h2>Partnerships &amp; tickets</h2>${pkgs}<p class="basis">${esc(valueBasis(dest))}</p></section>
     <section><h2>Leisure activities · ${esc(dest.place)}</h2>
       <p class="note">${esc(ADDON_CONDITION)}</p>${adds}</section>
     <section><h2>The room</h2>
@@ -2177,19 +2181,72 @@ function ExclusiveBadge() {
   )
 }
 
-/* Passes and availability: the card's spec line, and the slide's. */
-function PackageFacts({ pkg, className = '' }) {
+/* What a package buys, in three figures (Stuart, 29 Sep 2026: "focused and
+   centred around ROI, brand visibility, business leads, association with the
+   biggest brands, and networking and curated intros if it's in the package").
+   Every figure is the page's own: the fifty C-level guests NEXT.io invites
+   (the room section's headline, summed from dest.target), the delegate list
+   where the package's deliverables include it (the room is DELEGATE_BUILD's
+   100), the target operators otherwise, and the price over the fifty guests,
+   a floor, so "From". The rate card and the proposal print the same line. */
+const guestsOf = (dest) => dest.target.reduce((s, t) => s + t.n, 0)
+const ROOM_SIZE = DELEGATE_BUILD.reduce((s, d) => s + d.n, 0)
+const hasDelegateList = (pkg) => pkg.deliverables.some((d) => d.startsWith('Delegate list pre-event'))
+function packageValue(pkg, dest) {
+  const guests = guestsOf(dest)
+  const ops = dest.target.find((t) => t.label === 'Operators')
+  return [
+    { value: String(guests), label: 'C-level guests NEXT.io invites' },
+    hasDelegateList(pkg)
+      ? { value: String(ROOM_SIZE), pre: 'Up to', label: 'Titles and companies, sent pre-event' }
+      : { value: String(ops.n), pre: 'Target', label: 'Operators among the guests' },
+    { value: eur(Math.round(pkg.price / guests)), pre: 'From', label: 'Per invited guest in the room' },
+  ]
+}
+// "The 50 NEXT.io invites to Cyprus: a target of 35 operators, 10 affiliates and 5 influencers."
+function valueBasis(dest) {
+  const parts = dest.target.map((t) => `${t.n} ${t.label.toLowerCase()}`)
+  return `The ${guestsOf(dest)} NEXT.io invites to ${dest.placeShort}: a target of ${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}.`
+}
+// the same figures as one printed line: "50 C-level guests NEXT.io invites · up to 100 ..."
+const valueLine = (pkg, dest) =>
+  packageValue(pkg, dest).map((f) => `${f.pre ? `${f.pre.toLowerCase()} ` : ''}${f.value} ${inSentence(f.label)}`).join(' · ')
+
+/* The value figures, then passes and availability (the scarcity line): the
+   card's spec block, and the slide's. The figures lay out by the block's own
+   width: three columns from 20rem, a row per figure below that (a narrow card
+   at 390 or at lg). On a card the scarcity line sits at the foot of its
+   subgrid row, so it aligns across the three cards; the basis sentence prints
+   once under the cards and on each slide (`basis`). */
+function PackageFacts({ pkg, dest, basis = false, className = '' }) {
+  const figs = packageValue(pkg, dest)
   return (
-    <div className={`flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-white/10 py-3.5
-                     font-sans text-[12px] text-white/65 ${className}`}>
-      <span className="inline-flex items-center gap-2">
-        <Ticket size={14} className="text-brand-yellow" strokeWidth={1.5} />
-        {pkg.passes} all-inclusive pass{pkg.passes === 1 ? '' : 'es'}
-      </span>
-      <span className="inline-flex items-center gap-2">
-        <Users size={14} className="text-brand-yellow" strokeWidth={1.5} />
-        {pkg.avail} available
-      </span>
+    <div className={`@container flex flex-col ${className}`}>
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-3 gap-y-2.5 border-t border-white/10 pt-4 pb-4
+                      @min-[20rem]:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)_minmax(0,1.3fr)] @min-[20rem]:items-start @min-[20rem]:gap-x-0">
+        {figs.map((f, k) => (
+          <div key={f.label}
+            className={`contents @min-[20rem]:block @min-[20rem]:min-w-0 @min-[20rem]:px-3 @min-[20rem]:first:pl-0
+                        ${k ? '@min-[20rem]:border-l @min-[20rem]:border-white/10' : ''}`}>
+            <span className="flex items-baseline gap-1.5 whitespace-nowrap @min-[20rem]:block">
+              <span className={`${f.pre ? 'inline' : 'hidden'} @min-[20rem]:block @min-[20rem]:h-[13px] font-sans text-[9.5px] uppercase track-mid leading-none text-white/45`}>{f.pre || '\u00a0'}</span>
+              <span className="font-display text-[1.45rem] @min-[20rem]:mt-1.5 @min-[20rem]:block @min-[20rem]:text-[1.7rem] font-light leading-none text-brand-yellow num">{f.value}</span>
+            </span>
+            <span className="font-sans text-[11.5px] @min-[20rem]:mt-2 @min-[20rem]:block @min-[20rem]:text-[11px] font-light leading-snug text-white/65">{f.label}</span>
+          </div>
+        ))}
+      </div>
+      {basis && <p className="-mt-1 pb-3.5 font-sans text-[10.5px] font-light leading-snug text-white/45">{valueBasis(dest)}</p>}
+      <div className="mt-auto flex flex-wrap items-center gap-x-6 gap-y-2 border-y border-white/10 py-3.5 font-sans text-[12px] text-white/65">
+        <span className="inline-flex items-center gap-2">
+          <Ticket size={14} className="text-brand-yellow" strokeWidth={1.5} />
+          {pkg.passes} all-inclusive pass{pkg.passes === 1 ? '' : 'es'}
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <Users size={14} className="text-brand-yellow" strokeWidth={1.5} />
+          {pkg.avail} available
+        </span>
+      </div>
     </div>
   )
 }
@@ -2244,7 +2301,7 @@ function CardTools({ id, name, onPresent }) {
    the price, the spec line, the list and the button sit at the same height
    across all three however long each name, promise or list runs. The last
    row holds the add button and the card's quiet actions together. */
-function PackageCard({ pkg, cart, onAdd, onPresent, featured }) {
+function PackageCard({ pkg, dest, cart, onAdd, onPresent, featured }) {
   return (
     <div
       id={`partner-${pkg.id}`}
@@ -2272,7 +2329,7 @@ function PackageCard({ pkg, cart, onAdd, onPresent, featured }) {
         {eur(pkg.price)}
       </div>
 
-      <PackageFacts pkg={pkg} className="mt-7" />
+      <PackageFacts pkg={pkg} dest={dest} className="mt-7" />
 
       <ul className="mt-7 space-y-3 flex-1">
         {pkg.deliverables.map((d) => (
@@ -2317,6 +2374,7 @@ function Partnerships({ dest, cart, onAdd, onPresent }) {
             <PackageCard
               key={p.id}
               pkg={p}
+              dest={dest}
               cart={cart}
               onAdd={onAdd}
               onPresent={onPresent}
@@ -2326,7 +2384,7 @@ function Partnerships({ dest, cart, onAdd, onPresent }) {
         </div>
 
         <p className="mt-8 font-sans text-[12px] font-light text-white/55 max-w-[72ch]">
-          {PARTNER_HEAD.note}
+          {valueBasis(dest)} {PARTNER_HEAD.note}
         </p>
       </Shell>
     </Section>
@@ -3406,7 +3464,7 @@ function PackageSlide({ slide, ctx }) {
           <span className={SLIDE_PRICE}>{eur(pkg.price)}</span>
           <span className="font-sans text-[12px] font-light text-white/55">All prices exclude VAT.</span>
         </div>
-        <PackageFacts pkg={pkg} className="mt-6 max-w-md" />
+        <PackageFacts pkg={pkg} dest={ctx.dest} basis className="mt-6 max-w-md" />
         <SlideActions item={pkg} id={id} ctx={ctx} />
       </div>
 

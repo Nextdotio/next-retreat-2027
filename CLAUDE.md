@@ -386,3 +386,38 @@ Rules to keep:
   Back from a retreat to the chooser; `#partner-general` and
   `?retreat=latam#partner-general`; `?present` on both retreats with
   ArrowRight (19 slides each, none scrolling at 1280x800).
+
+## Value figures on the packages (29 Sep 2026)
+
+Stuart, on the summit cards' figure rows: "these aren't exactly the best
+selling points for a headliner ... For all these numbers across all products
+... They need to be as strong as possible, focused and centred around ROI,
+brand visibility, business leads, association with the biggest brands, and
+networking and curated intros if it's in the package." The package cards
+showed only passes and availability; they now lead with what the money buys.
+
+- **`PackageFacts`** (card and package slide) opens with three figures from
+  `packageValue(pkg, dest)`, then keeps the scarcity line (passes, available)
+  beneath, at the foot of the card's subgrid row so it aligns across the
+  three cards:
+  - `50` "C-level guests NEXT.io invites": the room section's own headline
+    ("Fifty C-level guests attend on us"), summed from `dest.target`.
+  - Up to `100` "Titles and companies, sent pre-event" where the package's
+    deliverables include the pre-event delegate list (Headline, General; the
+    room is `DELEGATE_BUILD`'s 100), otherwise the destination's target
+    operators (Individual: 35 Cyprus, 30 Cancún).
+  - From `€1,700` / `€700` / `€300` "Per invited guest in the room": the
+    price over the fifty, a floor, so "From".
+- `valueBasis(dest)` states the target mix once: under the cards (before
+  `PARTNER_HEAD.note`) and on each package slide. The rate card prints the
+  figures as one line per package (`valueLine`) and the basis once; the
+  proposal prints the line under each package and the basis in its room
+  note.
+- The figures lay out by the block's own width (`@container`): three columns
+  from 20rem, a row per figure below that (390, and the three-up cards from
+  lg to about 1200). Values never wrap: measure 320 to 1440 after a change.
+- Nothing new is claimed: every number is already on the page. The leisure
+  slots carry no figures (no guest count on file for an activity). Checked
+  29 Sep 2026: no sideways scroll at 320 to 1440, 19 slides on each deck with
+  none scrolling at 1280x800, both printouts, rendered text clean of
+  NEXT.IO, IGAMING and em dashes.
