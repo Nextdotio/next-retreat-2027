@@ -1,8 +1,8 @@
-import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react'
+import { Children, useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react'
 import {
-  Anchor, ArrowRight, ArrowUpRight, BadgeCheck, Check, ChevronDown,
+  Anchor, ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Check, ChevronDown,
   Crown, Download, Handshake, Lock, Mail, Menu, Mic, Minus, Plus,
-  Presentation, Sailboat, ShieldCheck, Sparkles, Sun, Ticket, Trophy, Users,
+  Presentation, Sailboat, ShieldCheck, Sparkles, Star, Sun, Ticket, Trophy, Users,
   Waves, Wine, X,
 } from 'lucide-react'
 // Hashed URL of the self-hosted face, so the printables can load Jost too
@@ -22,6 +22,9 @@ import { PresentMode, usePresent, CopyLinkButton } from './PresentMode.jsx'
      · Retreat_Cyprus_2026 / Retreat_LATAM_2026 partner brochures
        (deliverables, audience split, attendee logos, C-level feedback)
      · Attendee snapshots, 21 Aug 2026 (roles on the confirmed guest list)
+     · Rory Credland's weekly delegate updates, 18 Sep 2026 (the companies
+       on each 2026 guest list, names only), plus the partners confirmed
+       for Cancún 2026 in Mathias Massoue's threads
 
    Deliberately excluded: revenue/profit/commission targets, cost lines,
    marketing budget, internal KPIs and delegate-acquisition milestones.
@@ -39,6 +42,9 @@ const DESTINATIONS = {
     theme: 'theme-europe',
     tag: 'Europe',
     place: 'Cyprus',
+    placeShort: 'Cyprus',
+    // The 2026 edition the current guest list is for (the retreat before this one)
+    edition2026: '12–14 October 2026',
     // Mirrors the official cover lockup line
     coverLine: 'EUROPE · 11–13 OCTOBER, 2027',
     venue: 'Cap St Georges Hotel & Resort',
@@ -81,16 +87,32 @@ const DESTINATIONS = {
       'Board Member', 'Head of Trading', 'Head of Affiliates',
       'Head of Business Development', 'Director of Gaming', 'Senior Director of Sales',
     ],
-    logoDir: 'logos/attendees/cyprus',
-    attendees: [
-      ['1win', '1win'], ['7bet', '7bet'], ['888africa', '888 Africa'],
-      ['bckend', 'BCKEND Innovations'], ['bet365', 'bet365'], ['betb2b', 'BetB2B'],
-      ['coolbet', 'Coolbet'], ['entain', 'Entain'], ['flutter', 'Flutter Entertainment'],
-      ['gamingtec', 'Gamingtec'], ['highbet', 'Highbet'], ['immense', 'Immense'],
-      ['kingmakers', 'KingMakers'], ['ll-europe', 'L&L Europe'], ['leon', 'LEON'],
-      ['lottoland', 'Lottoland'], ['midnite', 'Midnite'], ['odds96', 'odds96'],
-      ['play-north', 'Play North'], ['super-group', 'Super Group'], ['tipico', 'Tipico'],
-      ['tonybet', 'Tonybet'], ['wildz', 'Wildz Group'], ['yolo-group', 'Yolo Group'],
+    // Two walls, never mixed (see GUESTS_HEAD and WHO_HEAD). Paths are under
+    // public/logos/, one file per brand: a mark already on the other retreat's
+    // wall or on the partner wall is referenced, not copied.
+    // `guests`: companies on Rory's 18 Sep 2026 list for this 2026 edition,
+    // delegates first, then its partners. Only companies we hold a real logo
+    // for; the rest of the list is left out rather than guessed.
+    guests: [
+      ['attendees/cyprus/bet365', 'bet365'], ['attendees/cyprus/entain', 'Entain'],
+      ['attendees/cyprus/flutter', 'Flutter Entertainment'], ['attendees/cyprus/betsson', 'Betsson'],
+      ['attendees/cyprus/super-group', 'Super Group'], ['attendees/cyprus/tipico', 'Tipico'],
+      ['attendees/cyprus/lottoland', 'Lottoland'], ['attendees/latam/1xbet', '1xBet'],
+      ['attendees/cyprus/coolbet', 'Coolbet'], ['attendees/cyprus/tonybet', 'Tonybet'],
+      ['attendees/cyprus/7bet', '7bet'], ['attendees/cyprus/ll-europe', 'L&L Europe'],
+      ['attendees/cyprus/wildz', 'Wildz Group'], ['attendees/cyprus/immense', 'Immense'],
+      ['attendees/cyprus/1win', '1win'], ['attendees/cyprus/bckend', 'BCKEND Innovations'],
+      ['partners/softswiss', 'SOFTSWISS'], ['partners/optimove', 'Optimove'],
+      ['partners/betby', 'Betby'], ['partners/flows', 'Flows'], ['partners/spinoro', 'Spinoro'],
+    ],
+    // `previous`: the 2026 brochure's attendee page (earlier editions) minus
+    // anyone on the 2026 list above.
+    previous: [
+      ['attendees/cyprus/888africa', '888 Africa'], ['attendees/cyprus/betb2b', 'BetB2B'],
+      ['attendees/cyprus/gamingtec', 'Gamingtec'], ['attendees/cyprus/highbet', 'Highbet'],
+      ['attendees/cyprus/kingmakers', 'KingMakers'], ['attendees/cyprus/leon', 'LEON'],
+      ['attendees/cyprus/midnite', 'Midnite'], ['attendees/cyprus/odds96', 'odds96'],
+      ['attendees/cyprus/play-north', 'Play North'], ['attendees/cyprus/yolo-group', 'Yolo Group'],
     ],
     days: [
       {
@@ -123,7 +145,10 @@ const DESTINATIONS = {
       pool: {
         title: 'Sport and slow hours by the pool',
         blurb: 'The most relaxed real estate at the retreat. Poolside sessions, morning movement and sunrise swims. Branded, hosted and impossible to walk past.',
-        imgs: [],
+        // NEXT's own photograph, Retreat Europe 2025 at Cap St Georges
+        // (SharePoint: NEXT Retreat EU/2025/Marketing/Event Photos For The
+        // Website, IMG_0376). `pos` keeps the sea in a letterbox crop.
+        imgs: [{ src: 'images/cyprus-pool.jpg', alt: 'Infinity pool overlooking the sea at Cap St Georges Hotel & Resort, Cyprus', pos: '50% 30%' }],
       },
     },
   },
@@ -133,6 +158,8 @@ const DESTINATIONS = {
     theme: 'theme-latam',
     tag: 'LatAm',
     place: 'Cancún, Mexico',
+    placeShort: 'Cancún',
+    edition2026: '17–19 November 2026',
     coverLine: 'CANCÚN · 15–17 NOVEMBER, 2027',
     venue: 'Secrets Maroma Beach Riviera Cancun',
     venueShort: 'Secrets Maroma Beach',
@@ -180,23 +207,33 @@ const DESTINATIONS = {
       'Director LatAm', 'Regional Markets Director', 'Director de Operaciones',
       'VP LatAm', 'Legal Director', 'Investor',
     ],
-    logoDir: 'logos/attendees/latam',
-    attendees: [
-      ['1xbet', '1xBet'], ['aieja', 'AIEJA'], ['anakatech', 'Anakatech'],
-      ['apostou', 'Apostou'], ['apuestagana', 'ApuestaGana'], ['apuestatotal', 'Apuesta Total'],
-      ['apuesteria', 'Apuestería'], ['bandbet', 'BandBet'], ['betcris', 'Betcris'],
-      ['betjara', 'Betjara'], ['betplay', 'BetPlay'], ['betsul', 'Betsul'],
-      ['betsw', 'BetSW'], ['better-collective', 'Better Collective'], ['betxico', 'BetXico'],
-      ['brazino777', 'Brazino777'], ['caliente', 'Caliente Interactive'],
-      ['casa-de-apostas', 'Casa de Apostas'], ['casino-club', 'Casino Club'],
-      ['draftkings', 'DraftKings'], ['estoril-sol-digital', 'Estoril Sol Digital'],
-      ['estrelabet', 'EstrelaBet'], ['golden-lion', 'Golden Lion'],
-      ['hard-rock-digital', 'Hard Rock Digital'], ['highbet', 'Highbet'],
-      ['island-luck', 'Island Luck'], ['jokerbet', 'Jokerbet'], ['js', 'JS'],
-      ['kto', 'KTO'], ['latamwin', 'Latamwin'], ['logrand', 'Logrand'],
-      ['nossabet', 'NossaBet'], ['novibet', 'Novibet'], ['orenes', 'Orenes Grupo'],
-      ['rubyplay', 'RubyPlay'], ['rushbet', 'Rushbet'], ['stake', 'Stake'],
-      ['tinbet', 'Tinbet'],
+    // Rory's 18 Sep 2026 Cancún list (delegates), then the partners confirmed
+    // for Cancún 2026: SOFTSWISS (the Headline), Alea and Playson. TaDa Gaming
+    // is confirmed too; its logo only exists as an email attachment.
+    guests: [
+      ['attendees/latam/stake', 'Stake'], ['attendees/latam/betmgm', 'BetMGM'],
+      ['attendees/latam/hard-rock-digital', 'Hard Rock Digital'], ['attendees/latam/novibet', 'Novibet'],
+      ['attendees/latam/betplay', 'BetPlay'], ['attendees/latam/estrelabet', 'EstrelaBet'],
+      ['attendees/latam/betsul', 'Betsul'], ['attendees/latam/casa-de-apostas', 'Casa de Apostas'],
+      ['attendees/latam/logrand', 'Logrand'], ['attendees/latam/estoril-sol-digital', 'Estoril Sol Digital'],
+      ['attendees/latam/apuesteria', 'Apuestería'], ['attendees/latam/latamwin', 'Latamwin'],
+      ['partners/softswiss', 'SOFTSWISS'], ['partners/alea', 'Alea'], ['partners/playson', 'Playson'],
+    ],
+    previous: [
+      ['attendees/latam/1xbet', '1xBet'], ['attendees/latam/aieja', 'AIEJA'],
+      ['attendees/latam/anakatech', 'Anakatech'], ['attendees/latam/apostou', 'Apostou'],
+      ['attendees/latam/apuestagana', 'ApuestaGana'], ['attendees/latam/apuestatotal', 'Apuesta Total'],
+      ['attendees/latam/bandbet', 'BandBet'], ['attendees/latam/betcris', 'Betcris'],
+      ['attendees/latam/betjara', 'Betjara'], ['attendees/latam/betsw', 'BetSW'],
+      ['attendees/latam/better-collective', 'Better Collective'], ['attendees/latam/betxico', 'BetXico'],
+      ['attendees/latam/brazino777', 'Brazino777'], ['attendees/latam/caliente', 'Caliente Interactive'],
+      ['attendees/latam/casino-club', 'Casino Club'], ['attendees/latam/draftkings', 'DraftKings'],
+      ['attendees/latam/golden-lion', 'Golden Lion'], ['attendees/latam/highbet', 'Highbet'],
+      ['attendees/latam/island-luck', 'Island Luck'], ['attendees/latam/jokerbet', 'Jokerbet'],
+      ['attendees/latam/js', 'JS'], ['attendees/latam/kto', 'KTO'],
+      ['attendees/latam/nossabet', 'NossaBet'], ['attendees/latam/orenes', 'Orenes Grupo'],
+      ['attendees/latam/rubyplay', 'RubyPlay'], ['attendees/latam/rushbet', 'Rushbet'],
+      ['attendees/latam/tinbet', 'Tinbet'],
     ],
     days: [
       {
@@ -300,7 +337,11 @@ const ADDONS = [
 const ADDON_CONDITION =
   'Leisure activities are sold only alongside a Headline or General Partnership.'
 
-/* Shared audience data — from the 2026 partner brochures */
+/* Shared audience data, from the 2026 partner brochures (BR26 p4), which
+   describe the editions before them. Wherever these figures appear they carry
+   AUDIENCE_BASIS, so they never read as this year's guest list; the current
+   lists' own seniority is not published. */
+const AUDIENCE_BASIS = 'previous editions'
 const SENIORITY = [
   { label: 'C-level', pct: 83, tone: 'brand' },
   { label: 'Senior management', pct: 17, tone: 'quiet' },
@@ -338,7 +379,7 @@ const POSITIONING = [
   },
   {
     title: 'Built for business outcomes',
-    body: 'Hosted meetings, curated content and premium leisure engineered for real deals, in a world-class resort.',
+    body: 'Hosted meetings, curated content and premium leisure engineered for real deals, at a five-star resort.',
     icon: Trophy,
   },
   {
@@ -352,6 +393,17 @@ const PARTNERS_2026 = [
   ['alea', 'Alea'], ['anakatech', 'Anakatech'], ['betby', 'BetBy'], ['flows', 'Flows'],
   ['optimove', 'Optimove'], ['playson', 'Playson'], ['softswiss', 'SoftSwiss'],
   ['spinoro', 'Spinoro'], ['z-gaming-asia', 'Z-Gaming Asia'],
+]
+
+/* Why the room is worth buying into, in three lines under the hero headline
+   (Stuart, 29 Sep 2026: a five-star experience; C-level operators, from huge
+   companies and the smaller ones that bring new business; fifty places for
+   suppliers, who are the ones buying the packages). Nothing here is a new
+   figure: the fifty is the page's own 50 / 50. */
+const HERO_VALUE = [
+  [Star, 'A five-star retreat at a five-star resort.'],
+  [Crown, 'C-level operators, from the largest groups in the market to the fast-growing names that bring new business.'],
+  [Ticket, 'Fifty places for suppliers, and a partnership or a ticket is how you take one.'],
 ]
 
 /* The four facts under the hero, repeated on the presentation's cover. Each
@@ -422,6 +474,29 @@ function readPlan() {
     return []
   }
 }
+
+/* ─── Names that keep their own case ────────────────────────────────────
+   Stuart, 29 Sep 2026: "whenever you write iGaming, it should always be a
+   lowercase i". Eyebrows, labels, the deck's top bar and slide list and the
+   printouts' headings are set in capitals, so any text that can land in one
+   goes through keepCase, which wraps each name in a normal-case span (the
+   sibling brochures' withBrands pattern). NEXT.io and NEXTPredict keep their
+   case the same way. Check by reading rendered innerText (page, deck and both
+   PDFs) for /IGAMING|NEXT\.IO|NEXTPREDICT/, never by reading the source. */
+const CASED_NAMES = ['iGaming', 'NEXT.io', 'NEXTPredict']
+const CASED_SPLIT = /(iGaming|NEXT\.io|NEXTPredict)/
+function keepCase(text) {
+  if (typeof text !== 'string') return text
+  const parts = text.split(CASED_SPLIT)
+  if (parts.length === 1) return text
+  return parts.map((part, i) => (CASED_NAMES.includes(part) ? <span key={i} className="normal-case">{part}</span> : part))
+}
+/* The same for the printables' HTML: text between tags only, so an
+   attribute is never touched. */
+const keepCaseHtml = (html) =>
+  html.split(/(<[^>]*>)/).map((seg) => (seg.startsWith('<')
+    ? seg
+    : seg.replace(/(iGaming|NEXT\.io|NEXTPredict)/g, '<span style="text-transform:none">$1</span>'))).join('')
 
 /* ─── Brand furniture ───────────────────────────────────────────────────── */
 
@@ -497,7 +572,7 @@ function Eyebrow({ n, children, className = '' }) {
   return (
     <div className={`font-sans text-[10px] sm:text-[11px] uppercase track-wide text-brand-yellow ${className}`}>
       {n && <><span className="num">{n}</span><span className="mx-2 opacity-40">/</span></>}
-      {children}
+      {Children.map(children, keepCase)}
     </div>
   )
 }
@@ -643,10 +718,10 @@ function printShell(title, subtitle, body, { addonTerms = true } = {}) {
 <div class="cover">
   <div class="bar"></div>
   <img class="lockup" src="${absUrl(asset('logos/next-retreat-lockup.png'))}" alt="NEXT.io Retreat">
-  <h1>${esc(title)}</h1>
-  <p>${subtitle}</p>
+  <h1>${keepCaseHtml(esc(title))}</h1>
+  <p>${keepCaseHtml(subtitle)}</p>
 </div>
-${body}
+${keepCaseHtml(body)}
 <div class="foot">
   All prices exclude VAT. Availability is live and subject to change without notice.<br>
   ${addonTerms ? `${esc(ADDON_CONDITION)}<br>` : ''}
@@ -683,6 +758,12 @@ function exportProposal(dest, cart) {
   ))
 }
 
+/* "Seniority at previous editions: 83% C-level, 17% senior management", read
+   from the page's own arrays, so the printout carries the same basis. */
+const inSentence = (s) => (/^[A-Z][a-z]/.test(s) ? s[0].toLowerCase() + s.slice(1) : s) // "C-level" stays
+const roomLine = (rows, label) =>
+  `${label} at ${AUDIENCE_BASIS}: ${rows.map((r) => `${r.pct}% ${inSentence(r.label)}`).join(', ')}`
+
 function exportRateCard(dest) {
   const pkgs = PACKAGES.map((p) => `<div class="item">
       <div class="ihead"><div><h3 style="display:inline">${esc(p.name)}</h3>
@@ -710,8 +791,8 @@ function exportRateCard(dest) {
       <div class="item">
         <ul>
           <li>100 delegates, capped: an even 50 operators / 50 suppliers split</li>
-          <li>83% C-level, 17% senior management</li>
-          <li>52% operators, 35% service providers, 10% investors, 3% associations</li>
+          <li>${esc(roomLine(SENIORITY, 'Seniority'))}</li>
+          <li>${esc(roomLine(COMPOSITION, 'Who they are'))}</li>
           <li>All content under Chatham House Rule</li>
           <li>Personalised onboarding and meeting matchmaking completed one month out</li>
           <li>${esc(dest.focus)}</li>
@@ -758,47 +839,111 @@ const NAV = [
   ['build', 'Build a package'],
 ]
 
-/* The compact switch lives in the header. Each tab is a full 40px-tall target;
-   the yellow pill is drawn 3px inside it, so the control reads as compact as
-   it did while being easy to hit with a thumb. */
-function DestinationSwitch({ active, onChange, compact = false }) {
+/* ─── Screens and their addresses ─────────────────────────────────────────
+   Three screens: the chooser (no ?retreat) and one per retreat
+   (?retreat=europe, ?retreat=latam). The address is the only source of truth;
+   see readRetreat in App for the links made before the chooser existed. */
+const BASE = import.meta.env.BASE_URL
+const retreatHref = (id, hash = '') => `${BASE}${id ? `?retreat=${id}` : ''}${hash ? `#${hash}` : ''}`
+
+/* A plain left click is handled in place; a new tab or a copied address
+   follows the real link. */
+const isPlainClick = (e) => e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey
+
+/* The retreat switch (Stuart, 29 Sep 2026: "make those buttons where we
+   switch between LATAM and Europe a lot clearer"). Each option names the
+   retreat and its place; the one on screen is filled yellow and marked as the
+   current page. They are links, so they copy and open in a new tab; a plain
+   click goes through goTo: the address is pushed (Back returns), a package
+   from the other retreat empties, and the new retreat opens at its top.
+     hero     the labelled control at the top of the hero, from md
+     bar      the phone header's second row, two lines per option
+     compact  the header from md, once the hero's control has scrolled away
+   Every option is a 44px target; the compact pill is drawn 3px inside it.
+   The caller passes the display (grid, inline-grid, or hidden plus a
+   breakpoint), so a base display class can never override its "hidden". */
+function RetreatSwitch({ destId, onGo, variant = 'hero', className = 'grid' }) {
+  const hero = variant === 'hero'
+  const bar = variant === 'bar'
   return (
-    <div
-      role="tablist"
+    <nav
       aria-label="Choose a retreat"
-      className={`relative inline-flex items-center rounded-full border border-white/15 bg-ink/70 backdrop-blur-md
-                  ${compact ? '' : 'p-1'}`}
+      className={`grid-cols-2 rounded-full border border-white/15 bg-ink/70 backdrop-blur-md
+                  ${hero ? 'gap-1 p-1' : ''} ${className}`}
     >
       {Object.values(DESTINATIONS).map((d) => {
-        const on = d.id === active
+        const on = d.id === destId
         return (
-          <button
+          <a
             key={d.id}
-            role="tab"
-            aria-selected={on}
-            onClick={() => onChange(d.id)}
-            className={`relative whitespace-nowrap rounded-full transition-all duration-500 font-sans
-                        ${compact ? 'h-10 px-3 min-[360px]:px-4 text-[11px]' : 'min-h-10 px-5 sm:px-7 py-2.5 text-xs sm:text-[13px]'}
-                        ${on
-                          ? `${compact ? '' : 'bg-brand-yellow'} text-brand-dark font-medium`
-                          : 'text-white/60 hover:text-white/90'}`}
+            href={retreatHref(d.id)}
+            aria-current={on ? 'page' : undefined}
+            onClick={(e) => {
+              if (!isPlainClick(e)) return
+              e.preventDefault()
+              if (!on) onGo(d.id)
+            }}
+            className={`group relative flex min-w-0 items-center justify-center rounded-full font-sans transition-colors duration-300
+                        ${hero
+                          ? `min-h-[3.4rem] gap-4 px-5 lg:px-6 text-left ${on ? 'bg-brand-yellow text-brand-dark' : 'text-white/80 hover:bg-white/[0.07] hover:text-white'}`
+                          : `h-11 px-3 min-[380px]:px-4 text-center ${on ? 'text-brand-dark' : 'text-white/70 hover:text-white'}`}`}
           >
-            {compact && (
+            {!hero && (
               <span
                 aria-hidden="true"
                 className={`absolute inset-[3px] rounded-full transition-colors duration-500 ${on ? 'bg-brand-yellow' : ''}`}
               />
             )}
-            <span className="relative uppercase track-mid">{d.tag}</span>
-            {!compact && (
-              <span className={`ml-2.5 hidden sm:inline num ${on ? 'text-brand-dark/65' : 'text-white/35'}`}>
-                {d.datesTight}
+            {hero ? (
+              <>
+                <span className="min-w-0">
+                  <span className="block whitespace-nowrap text-[11px] font-medium uppercase track-mid">Retreat {d.tag}</span>
+                  <span className={`mt-1 block whitespace-nowrap text-[12.5px] num ${on ? 'text-brand-dark/70' : 'text-white/55'}`}>
+                    {d.placeShort} · {d.datesTight}
+                  </span>
+                </span>
+                {on
+                  ? <Check size={15} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+                  : <ArrowRight size={15} strokeWidth={1.6} className="shrink-0 text-white/45 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-yellow" aria-hidden="true" />}
+              </>
+            ) : bar ? (
+              <span className="relative block leading-tight">
+                <span className={`block text-[9.5px] uppercase track-mid ${on ? 'text-brand-dark/70' : 'text-white/50'}`}>{d.tag}</span>
+                <span className={`block text-[13px] ${on ? 'font-medium' : ''}`}>{d.placeShort}</span>
+              </span>
+            ) : (
+              <span className="relative whitespace-nowrap text-[11px] uppercase track-mid">
+                {d.tag}
+                <span className={`hidden min-[1400px]:inline ${on ? 'text-brand-dark/60' : 'text-white/40'}`}> · {d.placeShort}</span>
               </span>
             )}
-          </button>
+          </a>
         )
       })}
-    </div>
+    </nav>
+  )
+}
+
+/* Back to the chooser: a real link to the page with no retreat. Icon-only
+   where the header is tight; the words stay for screen readers. */
+function BackToChooser({ onGo, onClick, className = '' }) {
+  return (
+    <a
+      href={retreatHref(null)}
+      data-back
+      onClick={(e) => {
+        onClick?.()
+        if (!isPlainClick(e)) return
+        e.preventDefault()
+        onGo(null)
+      }}
+      className={`inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-full border border-white/20 bg-ink/70
+                  font-sans text-[11px] uppercase track-mid text-white/85 backdrop-blur-md
+                  hover:border-brand-yellow/60 hover:text-brand-yellow transition lg:w-auto lg:px-4 ${className}`}
+    >
+      <ArrowLeft size={15} strokeWidth={1.6} aria-hidden="true" />
+      <span className="sr-only lg:not-sr-only">Both retreats</span>
+    </a>
   )
 }
 
@@ -814,7 +959,7 @@ function PricesLink({ className = 'inline-flex', onClick }) {
       href="#partner"
       data-prices
       onClick={onClick}
-      className={`h-[42px] shrink-0 items-center gap-2 rounded-full border border-white/20 bg-ink/70
+      className={`h-11 shrink-0 items-center gap-2 rounded-full border border-white/20 bg-ink/70
                   px-3 min-[360px]:px-4 font-sans text-[11px] uppercase track-mid text-white/85 backdrop-blur-md
                   hover:border-brand-yellow/60 hover:text-brand-yellow transition ${className}`}
     >
@@ -825,27 +970,35 @@ function PricesLink({ className = 'inline-flex', onClick }) {
 }
 
 /* Present opens the walk-through of the retreat on screen. From md it is a
-   pill in the bar; between 1280 and 1399px, where the section nav leaves
-   little room, the pill shows only its icon (the label stays for screen
-   readers); on a phone it is the first item in the menu. */
+   pill in the bar, labelled where the bar has room (lg to xl, and from
+   1400px) and an icon elsewhere (the label stays for screen readers); on a
+   phone it is in the menu. The chooser has no deck, so no Present. */
 function PresentButton({ onClick, className = '' }) {
   return (
     <button
       type="button"
       onClick={onClick}
       data-present-button
-      className={`h-[42px] shrink-0 items-center justify-center gap-2 rounded-full border border-white/20 bg-ink/70 px-4
+      className={`h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-full border border-white/20 bg-ink/70 px-0
                   font-sans text-[11px] uppercase track-mid text-white/85 backdrop-blur-md
-                  xl:max-[1399px]:w-[42px] xl:max-[1399px]:px-0
+                  lg:w-auto lg:px-4 xl:max-[1399px]:w-11 xl:max-[1399px]:px-0
                   hover:border-brand-yellow/60 hover:text-brand-yellow transition ${className}`}
     >
       <Presentation size={14} strokeWidth={1.6} className="text-brand-yellow" aria-hidden="true" />
-      <span className="xl:max-[1399px]:sr-only">Present</span>
+      <span className="sr-only lg:not-sr-only xl:max-[1399px]:sr-only">Present</span>
     </button>
   )
 }
 
-function Nav({ destId, setDestId, cartCount, onPresent }) {
+/* One header for the three screens. On the chooser it is the lockup (once
+   the page's own has scrolled away) and Enquire, which writes to
+   partnerships: there is no package or deck there. On a retreat it adds the
+   way back to the chooser, the section nav, Present, the retreat switch and
+   the prices. */
+const CHOOSER_MAILTO = 'mailto:sales@next.io?subject=' + encodeURIComponent('NEXT.io Retreats 2027: partnership enquiry')
+
+function Nav({ destId, onGo, cartCount, onPresent }) {
+  const home = destId === null
   const [solid, setSolid] = useState(false)
   const [open, setOpen] = useState(false)
   const barRef = useRef(null)
@@ -857,6 +1010,9 @@ function Nav({ destId, setDestId, cartCount, onPresent }) {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  // A new screen never opens with the last one's menu hanging open
+  useEffect(() => { setOpen(false) }, [destId])
 
   // Anchors land below the header at every breakpoint because its real height
   // (two rows on a phone, one from md) is measured into --nav-h, not assumed.
@@ -906,35 +1062,47 @@ function Nav({ destId, setDestId, cartCount, onPresent }) {
                       : 'bg-gradient-to-b from-ink/85 via-ink/45 to-transparent'}`}
       >
         <div ref={barRef} data-bar>
-          <Shell className="h-14 md:h-20 flex items-center gap-3 md:gap-4">
-            {/* The hero carries the full-size lockup, so the header only shows its
-                own once the hero's has scrolled away — never two on one screen. */}
+          <Shell className="h-14 md:h-20 flex items-center gap-2 md:gap-3 lg:gap-4">
+            {!home && <BackToChooser onGo={onGo} onClick={close} />}
+            {/* The page carries the full-size lockup, so the header only shows its
+                own once the page's has scrolled away: never two on one screen. */}
             <a
               href="#top"
               onClick={close}
-              className={`inline-flex h-10 shrink-0 items-center transition-[opacity,visibility] duration-500
+              className={`inline-flex h-11 shrink-0 items-center transition-[opacity,visibility] duration-500
                           ${solid ? 'opacity-100 visible' : 'opacity-0 invisible'}`}
               aria-label="Top"
             >
               <Lockup className="h-8 md:h-10" />
             </a>
-            <nav aria-label="Sections" className="hidden xl:flex items-center gap-4 min-[1400px]:gap-5 ml-6 min-[1400px]:ml-7 font-sans text-[11.5px] uppercase track-mid whitespace-nowrap">
-              {NAV.map(([id, label]) => (
-                <a key={id} href={`#${id}`} className="inline-flex h-10 items-center text-white/60 hover:text-brand-yellow transition-colors">
-                  {label}
-                </a>
-              ))}
-            </nav>
+            {!home && (
+              <nav aria-label="Sections" className="hidden xl:flex items-center gap-4 min-[1400px]:gap-5 ml-3 min-[1400px]:ml-5 font-sans text-[11.5px] uppercase track-mid whitespace-nowrap">
+                {NAV.map(([id, label]) => (
+                  <a key={id} href={`#${id}`} className="inline-flex h-10 items-center text-white/60 hover:text-brand-yellow transition-colors">
+                    {label}
+                  </a>
+                ))}
+              </nav>
+            )}
             <div className="ml-auto flex items-center gap-2 lg:gap-3">
-              <PresentButton className="hidden md:inline-flex" onClick={() => { close(); onPresent('') }} />
-              <div className="hidden md:block">
-                <DestinationSwitch active={destId} onChange={setDestId} compact />
-              </div>
-              <PricesLink className="hidden md:inline-flex xl:hidden" onClick={close} />
+              {!home && <PresentButton className="hidden md:inline-flex" onClick={() => { close(); onPresent('') }} />}
+              {/* From md the hero carries the labelled switch; the header's own
+                  slides in once that one has scrolled away. From xl the section
+                  nav fills the bar, so the way across is the hero's switch, the
+                  both-retreats cards near the end, and Both retreats. */}
+              {!home && (
+                <div
+                  className={`hidden md:block xl:hidden overflow-hidden transition-[max-width,opacity,visibility] duration-500
+                              ${solid ? 'max-w-[26rem] opacity-100 visible' : 'max-w-0 opacity-0 invisible'}`}
+                >
+                  <RetreatSwitch destId={destId} onGo={onGo} variant="compact" />
+                </div>
+              )}
+              {!home && <PricesLink className="hidden md:inline-flex xl:hidden" onClick={close} />}
               <a
-                href="#build"
+                href={home ? CHOOSER_MAILTO : '#build'}
                 onClick={close}
-                className="relative inline-flex h-[42px] items-center gap-2 rounded-full bg-brand-yellow px-4 md:px-5
+                className="relative inline-flex h-11 items-center gap-2 rounded-full bg-brand-yellow px-4 md:px-5
                            font-sans text-[11px] md:text-xs uppercase track-mid text-brand-dark font-medium
                            hover:brightness-110 transition"
               >
@@ -945,27 +1113,31 @@ function Nav({ destId, setDestId, cartCount, onPresent }) {
                   </span>
                 )}
               </a>
-              <button
-                ref={menuBtnRef}
-                type="button"
-                onClick={() => setOpen((o) => !o)}
-                aria-controls="site-menu"
-                aria-expanded={open}
-                aria-label={open ? 'Close menu' : 'Menu'}
-                className="xl:hidden grid h-[42px] w-[42px] shrink-0 place-items-center rounded-full border border-white/20
-                           bg-ink/70 text-white/85 backdrop-blur-md hover:border-brand-yellow/60 hover:text-brand-yellow transition"
-              >
-                {open ? <X size={17} strokeWidth={1.6} /> : <Menu size={17} strokeWidth={1.6} />}
-              </button>
+              {!home && (
+                <button
+                  ref={menuBtnRef}
+                  type="button"
+                  onClick={() => setOpen((o) => !o)}
+                  aria-controls="site-menu"
+                  aria-expanded={open}
+                  aria-label={open ? 'Close menu' : 'Menu'}
+                  className="xl:hidden grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/20
+                             bg-ink/70 text-white/85 backdrop-blur-md hover:border-brand-yellow/60 hover:text-brand-yellow transition"
+                >
+                  {open ? <X size={17} strokeWidth={1.6} /> : <Menu size={17} strokeWidth={1.6} />}
+                </button>
+              )}
             </div>
           </Shell>
-          <div className="md:hidden px-5 pb-2 flex items-center justify-between gap-2 min-[360px]:gap-3">
-            <DestinationSwitch active={destId} onChange={setDestId} compact />
-            <PricesLink onClick={close} />
-          </div>
+          {!home && (
+            <div className="md:hidden px-5 pb-2 flex items-center gap-2 min-[360px]:gap-3">
+              <RetreatSwitch destId={destId} onGo={onGo} variant="bar" className="grid min-w-0 flex-1" />
+              <PricesLink onClick={close} />
+            </div>
+          )}
         </div>
 
-        {open && (
+        {open && !home && (
           <nav
             id="site-menu"
             aria-label="Sections"
@@ -974,6 +1146,24 @@ function Nav({ destId, setDestId, cartCount, onPresent }) {
                        bg-ink/[0.97] border-b md:border border-white/10 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.8)]"
           >
             <ul className="px-5 md:px-6 py-2">
+              <li className="border-b border-white/[0.07]">
+                <a
+                  href={retreatHref(null)}
+                  onClick={(e) => {
+                    close()
+                    if (!isPlainClick(e)) return
+                    e.preventDefault()
+                    onGo(null)
+                  }}
+                  className="group flex h-12 items-center justify-between gap-4 font-sans text-[12px] uppercase track-mid
+                             text-white/80 hover:text-brand-yellow transition-colors"
+                >
+                  <span className="inline-flex items-center gap-2.5">
+                    <ArrowLeft size={14} strokeWidth={1.6} className="text-brand-yellow" aria-hidden="true" />
+                    Both retreats
+                  </span>
+                </a>
+              </li>
               <li className="md:hidden border-b border-white/[0.07]">
                 <button
                   type="button"
@@ -1219,7 +1409,26 @@ function HeroFacts({ className = '', reveal = true, ddClass = 'text-[17px] sm:te
   )
 }
 
-function Hero({ dest, destId, setDestId, onPresent }) {
+/* The three value lines (HERO_VALUE), under the hero headline and on the
+   presentation's cover. */
+function HeroValue({ className = '', reveal = true, textClass = 'text-[15px] sm:text-[17px]' }) {
+  return (
+    <ul className={`space-y-3 sm:space-y-3.5 ${className}`}>
+      {HERO_VALUE.map(([Icon, line], i) => (
+        <li
+          key={line}
+          className={`${reveal ? 'reveal in ' : ''}flex items-start gap-3.5`}
+          style={reveal ? { transitionDelay: `${80 + i * 90}ms` } : undefined}
+        >
+          <Icon size={15} strokeWidth={1.5} className="mt-[0.3em] shrink-0 text-brand-yellow" aria-hidden="true" />
+          <span className={`font-sans font-light leading-snug text-white/80 ${textClass}`}>{line}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function Hero({ dest, destId, onGo, onPresent }) {
   return (
     <section id="top" className="relative min-h-[100svh] flex flex-col overflow-hidden">
       <div className="absolute inset-0">
@@ -1252,12 +1461,16 @@ function Hero({ dest, destId, setDestId, onPresent }) {
         <div className="reveal in grid lg:grid-cols-[minmax(0,1fr)_minmax(0,22.5rem)] xl:grid-cols-[minmax(0,1fr)_minmax(0,28.5rem)]
                         lg:gap-x-12 xl:gap-x-16">
           <div className="lg:col-start-1 lg:row-start-1">
+            {/* Which retreat this is, and the other one a click away. On a
+                phone the header's second row carries the same switch. */}
+            <RetreatSwitch destId={destId} onGo={onGo} className="hidden md:inline-grid mb-9 lg:mb-10" />
+
             <Lockup className="h-14 sm:h-20 lg:h-24" />
 
             {/* The official cover line, set the way the brochure sets it */}
             <div className="mt-6 sm:mt-7">
               <div className="font-sans text-[13px] sm:text-base font-medium uppercase track-mid text-white">
-                {dest.coverLine}
+                {keepCase(dest.coverLine)}
               </div>
               <div className="mt-1.5 font-sans text-[15px] sm:text-lg font-medium text-brand-yellow">
                 {dest.venue}
@@ -1274,18 +1487,10 @@ function Hero({ dest, destId, setDestId, onPresent }) {
             dest={dest}
             onPresent={onPresent}
             className="mt-7 sm:mt-11 lg:mt-0 max-w-[34rem] lg:max-w-none
-                       lg:col-start-2 lg:row-start-1 lg:row-span-4 lg:self-center"
+                       lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:self-center"
           />
 
-          <p className="lg:col-start-1 lg:row-start-3 mt-8 max-w-[46ch] font-sans text-[15px] sm:text-lg font-light leading-relaxed text-white/65">
-            One hundred senior executives, three days, two nights, and a room built
-            so that the people who buy and the people who build finally have time
-            to talk. Everything said in it stays in it.
-          </p>
-
-          <div className="lg:col-start-1 lg:row-start-4 mt-9 sm:mt-11 hidden sm:block">
-            <DestinationSwitch active={destId} onChange={setDestId} />
-          </div>
+          <HeroValue className="lg:col-start-1 lg:row-start-3 mt-8 sm:mt-10 max-w-[46rem]" />
         </div>
 
         <div className="mt-12 sm:mt-16">
@@ -1295,7 +1500,7 @@ function Hero({ dest, destId, setDestId, onPresent }) {
       </Shell>
 
       <a
-        href="#verdict"
+        href="#guests"
         className="relative mx-auto mb-8 grid place-items-center h-11 w-11 rounded-full border border-white/20
                    text-white/45 hover:text-brand-yellow hover:border-brand-yellow/50 transition"
         aria-label="Scroll on"
@@ -1421,10 +1626,10 @@ function Why({ dest }) {
             </div>
 
             <div className="reveal mt-10 grid grid-cols-3 gap-x-5 sm:flex sm:flex-wrap sm:gap-x-10 sm:gap-y-5">
-              {[['100', 'delegates, capped'], ['50/50', 'operators to suppliers'], ['83%', 'C-level']].map(([n, l]) => (
+              {[['100', 'delegates, capped'], ['50/50', 'operators to suppliers'], [`${SENIORITY[0].pct}%`, `${SENIORITY[0].label} at ${AUDIENCE_BASIS}`]].map(([n, l]) => (
                 <div key={l}>
                   <div className="font-display text-[2.1rem] sm:text-5xl font-light text-brand-yellow num leading-none">{n}</div>
-                  <div className="mt-2.5 font-sans text-[10px] sm:text-[11px] leading-relaxed uppercase track-mid text-white/55">{l}</div>
+                  <div className="mt-2.5 font-sans text-[10px] sm:text-[11px] leading-relaxed uppercase track-mid text-white/55">{keepCase(l)}</div>
                 </div>
               ))}
             </div>
@@ -1529,7 +1734,7 @@ function RoomPanels({ reveal = true, dense = false, className = '' }) {
   return (
     <div className={`grid lg:grid-cols-3 gap-px bg-white/10 ${className}`}>
       <div className={panel}>
-        <h3 className="font-sans text-[11px] uppercase track-mid text-white/55">Seniority</h3>
+        <h3 className="font-sans text-[11px] uppercase track-mid text-white/55">Seniority · {AUDIENCE_BASIS}</h3>
         <div className={`${gapTop} ${dense ? 'space-y-5' : 'space-y-7'}`}>
           {SENIORITY.map((s, i) => <Bar key={s.label} {...s} delay={i * 180} />)}
         </div>
@@ -1540,7 +1745,7 @@ function RoomPanels({ reveal = true, dense = false, className = '' }) {
       </div>
 
       <div className={panel} style={delay('110ms')}>
-        <h3 className="font-sans text-[11px] uppercase track-mid text-white/55">Who they are</h3>
+        <h3 className="font-sans text-[11px] uppercase track-mid text-white/55">Who they are · {AUDIENCE_BASIS}</h3>
         <div className={`${gapTop} ${dense ? 'space-y-5' : 'space-y-7'}`}>
           {COMPOSITION.map((c, i) => <Bar key={c.label} {...c} delay={i * 150} />)}
         </div>
@@ -1633,13 +1838,33 @@ function TheRoom({ dest }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   04 · Who is in the room
+   The companies: the 2026 guest list (right under the hero) and, in 04,
+   the earlier editions
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* Two walls, each with its own label, so the page never passes earlier
+   editions off as this year's list (29 Sep 2026: the old wall called the 2026
+   brochure's attendee page "the 2026 guest list", but most of those logos were
+   from earlier editions).
+     GUESTS_HEAD  the companies on Rory's 18 Sep 2026 list for the 2026
+                  edition, plus its confirmed partners: directly under the
+                  hero (GuestStrip) and the second slide
+     WHO_HEAD     the earlier editions' attendees who are not on that list:
+                  section 04 and its slide
+   Company names only, never a person or a title beside one. */
+const GUESTS_HEAD = {
+  eyebrow: (dest) => `On the 2026 guest list · ${dest.placeShort}`,
+  title: 'Already on the list.',
+  lede: (dest) => (
+    <>Delegates and partners on the list for Retreat {dest.tag} 2026, <span className="whitespace-nowrap num">{dest.edition2026}</span>, as of September.</>
+  ),
+  more: 'Previous editions',
+}
+
 const WHO_HEAD = {
-  eyebrow: (dest) => `In the room · ${dest.tag} 2026`,
+  eyebrow: (dest) => `Previous editions · ${dest.placeShort}`,
   title: 'The companies who were already there.',
-  lede: (dest) => `${dest.attendees.length} businesses on the ${dest.tag === 'LatAm' ? 'Cancún' : 'Cyprus'} guest list for 2026: operators, affiliates, suppliers and investors, sat at the same tables for three days.`,
+  lede: (dest) => `${dest.previous.length} more businesses from earlier Retreat ${dest.tag} editions: operators, affiliates, suppliers and investors, sat at the same tables for three days.`,
 }
 
 /* Job titles only: never paired back to a company or a name, which is why
@@ -1647,11 +1872,13 @@ const WHO_HEAD = {
 const TITLES_HEAD = {
   eyebrow: 'The titles on the 2026 guest list',
   title: 'Who you are actually sitting with.',
-  lede: (dest) => `A sample of the roles confirmed for the ${dest.tag} 2026 retreat. Eighty-three per cent of the room is C-level.`,
+  lede: (dest) => `A sample of the roles confirmed for the ${dest.tag} 2026 retreat. At ${AUDIENCE_BASIS}, eighty-three per cent of the room was C-level.`,
 }
 
 /* Attendee marks render as white silhouettes. */
 const SILHOUETTE = 'opacity-90 [filter:brightness(0)_invert(1)] mix-blend-screen'
+
+const logoSrc = (path) => asset(`logos/${path}.png`)
 
 function TitleChips({ titles, reveal = true, large = false }) {
   return (
@@ -1671,17 +1898,19 @@ function TitleChips({ titles, reveal = true, large = false }) {
   )
 }
 
-function WhoIsIn({ dest }) {
-  const half = Math.ceil(dest.attendees.length / 2)
-  const rows = [dest.attendees.slice(0, half), dest.attendees.slice(half)]
+/* Moving rails of marks, split into `rows` (alternate rows run the other way).
+   Each row is doubled so the loop is seamless; the copy is hidden from
+   assistive tech, which reads every company once. A short row is repeated
+   until it is wider than the widest screen, so the loop never shows a gap. */
+function LogoRails({ logos, rows = 2, className = '' }) {
+  const per = Math.ceil(logos.length / rows)
+  const lines = Array.from({ length: rows }, (_, r) => logos.slice(r * per, (r + 1) * per)).filter((l) => l.length)
   return (
-    <Section id="who" className="overflow-hidden">
-      <Shell>
-        <SectionHead n="04" eyebrow={WHO_HEAD.eyebrow(dest)} title={WHO_HEAD.title} lede={WHO_HEAD.lede(dest)} />
-      </Shell>
-
-      <div className="mt-14 sm:mt-20 rail-host space-y-4 sm:space-y-6">
-        {rows.map((row, ri) => (
+    <div className={`rail-host space-y-4 sm:space-y-6 ${className}`}>
+      {lines.map((row, ri) => {
+        const reps = Math.max(1, Math.ceil(12 / row.length))
+        const run = Array.from({ length: reps }, () => row).flat()
+        return (
           <div key={ri} className="overflow-hidden edge-fade-x">
             <div
               className={`flex w-max items-center ${ri % 2 ? 'rail-slow' : 'rail'}`}
@@ -1689,9 +1918,10 @@ function WhoIsIn({ dest }) {
             >
               {/* Not lazy-loaded: tiles slide in from outside a clipped rail, so
                   lazy images arrive late and read as empty boxes. */}
-              {[...row, ...row].map(([file, name], i) => (
+              {[...run, ...run].map(([path, name], i) => (
                 <div
-                  key={`${file}-${i}`}
+                  key={`${path}-${i}`}
+                  aria-hidden={i >= row.length ? 'true' : undefined}
                   className="shrink-0 mx-3 sm:mx-5 h-16 sm:h-20 w-32 sm:w-44 grid place-items-center
                              bg-white/[0.04] border border-white/[0.07] px-4 sm:px-6
                              [--logo-k:40px] sm:[--logo-k:52px]
@@ -1699,16 +1929,80 @@ function WhoIsIn({ dest }) {
                   title={name}
                 >
                   <WallLogo
-                    src={asset(`${dest.logoDir}/${file}.png`)}
-                    alt={name}
+                    src={logoSrc(path)}
+                    alt={i >= row.length ? '' : name}
                     className={`max-h-9 sm:max-h-11 max-w-full ${SILHOUETTE}`}
                   />
                 </div>
               ))}
             </div>
           </div>
-        ))}
-      </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/* A still wall of marks, centred, so a short last row sits in the middle.
+   Used for the previous editions on the page and for both walls on slides. */
+function LogoGrid({ logos, dense = false, reveal = true, className = '' }) {
+  return (
+    <ul className={`flex flex-wrap justify-center gap-2 sm:gap-3 ${reveal ? 'reveal' : ''} ${className}`}>
+      {logos.map(([path, name]) => (
+        <li
+          key={path}
+          title={name}
+          className={`grid place-items-center border border-white/[0.07] bg-white/[0.04] px-3
+                      ${dense
+                        ? 'h-14 w-[calc((100%-1rem)/3)] sm:w-[calc((100%-3rem)/5)] lg:w-[calc((100%-5.25rem)/8)] [--logo-k:34px] sm:[--logo-k:42px]'
+                        : 'h-16 sm:h-20 w-[calc((100%-1rem)/3)] sm:w-[calc((100%-3rem)/5)] lg:w-[calc((100%-4.5rem)/7)] [--logo-k:38px] sm:[--logo-k:48px] sm:px-5'}`}
+        >
+          <WallLogo src={logoSrc(path)} alt={name} className={`${dense ? 'max-h-8' : 'max-h-9 sm:max-h-11'} max-w-full ${SILHOUETTE}`} />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/* Directly under the hero: this year's list, moving, so the strength of the
+   room is the first thing after the offer (Stuart, 29 Sep 2026: "I want the
+   logos much higher up there, nearer to the hero"). */
+function GuestStrip({ dest }) {
+  return (
+    <section id="guests" className="jump relative overflow-hidden pt-14 pb-16 sm:pt-20 sm:pb-24">
+      <Shell>
+        <div className="reveal flex flex-wrap items-end justify-between gap-x-10 gap-y-4">
+          <div className="min-w-0">
+            <Eyebrow>{GUESTS_HEAD.eyebrow(dest)}</Eyebrow>
+            <h2 className="mt-4 font-display text-[2rem] sm:text-[2.6rem] font-light leading-[1.05] tracking-[-0.01em] text-white">
+              {GUESTS_HEAD.title}
+            </h2>
+          </div>
+          <div className="max-w-[40ch] lg:text-right">
+            <p className="font-sans text-[13.5px] font-light leading-relaxed text-white/60">{GUESTS_HEAD.lede(dest)}</p>
+            <a
+              href="#who"
+              className="mt-1 inline-flex min-h-11 items-center gap-2 font-sans text-[11px] uppercase track-mid text-white/70
+                         hover:text-brand-yellow transition-colors"
+            >
+              {GUESTS_HEAD.more} <ArrowRight size={13} strokeWidth={1.75} aria-hidden="true" />
+            </a>
+          </div>
+        </div>
+      </Shell>
+      <LogoRails logos={dest.guests} className="mt-9 sm:mt-12" />
+    </section>
+  )
+}
+
+/* 04 · Who is in the room: the earlier editions, then the titles */
+function WhoIsIn({ dest }) {
+  return (
+    <Section id="who" className="overflow-hidden">
+      <Shell>
+        <SectionHead n="04" eyebrow={WHO_HEAD.eyebrow(dest)} title={WHO_HEAD.title} lede={WHO_HEAD.lede(dest)} />
+        <LogoGrid logos={dest.previous} className="mt-14 sm:mt-20" />
+      </Shell>
 
       <Shell className="mt-20 sm:mt-28">
         <div className="reveal grid lg:grid-cols-[0.8fr_1fr] gap-12 lg:gap-20 items-start">
@@ -1963,7 +2257,7 @@ function PackageCard({ pkg, cart, onAdd, onPresent, featured }) {
       {featured && <div className="absolute top-0 inset-x-0 h-[2px] bg-brand-yellow" />}
 
       <div className="flex min-h-[24px] items-center justify-between gap-3">
-        <span className="font-sans text-[10px] uppercase track-mid text-white/55">{pkg.kicker}</span>
+        <span className="font-sans text-[10px] uppercase track-mid text-white/55">{keepCase(pkg.kicker)}</span>
         {pkg.exclusive && <ExclusiveBadge />}
       </div>
 
@@ -2085,6 +2379,7 @@ function ActivityCard({ addon, dest, cart, onAdd, onPresent, i }) {
                 src={asset(im.src)}
                 alt={im.alt}
                 loading="lazy"
+                style={im.pos ? { objectPosition: im.pos } : undefined}
                 className="h-full w-full object-cover transition-transform duration-[1400ms]
                            ease-out group-hover:scale-[1.06]"
               />
@@ -2103,7 +2398,7 @@ function ActivityCard({ addon, dest, cart, onAdd, onPresent, i }) {
         <div className="absolute inset-x-4 top-4 flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2 bg-ink/75 backdrop-blur-sm px-3 py-1.5">
             <Icon size={13} className="text-brand-yellow" strokeWidth={1.5} />
-            <span className="font-sans text-[10px] uppercase track-mid text-white/80 whitespace-nowrap">{addon.kicker}</span>
+            <span className="font-sans text-[10px] uppercase track-mid text-white/80 whitespace-nowrap">{keepCase(addon.kicker)}</span>
           </div>
           <div className="ml-auto bg-ink/75 backdrop-blur-sm px-3 py-1
                           font-display text-2xl sm:text-[1.7rem] font-light leading-tight text-white num">
@@ -2450,7 +2745,7 @@ const BOTH_HEAD = {
   lede: 'One product set, two rooms, five weeks apart. Partners who take both get the same brand in front of Europe and LatAm inside a single financial year.',
 }
 
-function BothRetreats({ destId, setDestId }) {
+function BothRetreats({ destId, onGo }) {
   return (
     <Section className="overflow-hidden !pt-0">
       <SeaWaves className="relative mb-16 sm:mb-24" />
@@ -2461,13 +2756,18 @@ function BothRetreats({ destId, setDestId }) {
           {Object.values(DESTINATIONS).map((d, i) => {
             const active = d.id === destId
             return (
-              <button
+              <a
                 key={d.id}
-                onClick={() => {
-                  setDestId(d.id)
-                  document.getElementById('top')?.scrollIntoView({ behavior: 'smooth' })
+                href={retreatHref(d.id)}
+                aria-current={active ? 'page' : undefined}
+                onClick={(e) => {
+                  if (!isPlainClick(e)) return
+                  e.preventDefault()
+                  // the other retreat opens at its top; this one goes back to it
+                  if (active) document.getElementById('top')?.scrollIntoView({ behavior: 'smooth' })
+                  else onGo(d.id)
                 }}
-                className={`reveal group relative text-left overflow-hidden min-h-[26rem] sm:min-h-[32rem] ${d.theme}`}
+                className={`reveal group relative flex flex-col justify-end text-left overflow-hidden min-h-[26rem] sm:min-h-[32rem] ${d.theme}`}
                 style={{ transitionDelay: `${i * 130}ms` }}
               >
                 <img
@@ -2479,7 +2779,7 @@ function BothRetreats({ destId, setDestId }) {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/80 to-ink/30" />
                 <div className="caustics opacity-40" />
-                <div className="relative h-full p-8 sm:p-11 flex flex-col justify-end">
+                <div className="relative p-8 sm:p-11">
                   <div className="font-sans text-[11px] uppercase track-wide text-brand-yellow">
                     Retreat {d.tag} · {d.edition}
                   </div>
@@ -2496,7 +2796,7 @@ function BothRetreats({ destId, setDestId }) {
                     <ArrowUpRight size={14} strokeWidth={1.75} />
                   </div>
                 </div>
-              </button>
+              </a>
             )
           })}
         </div>
@@ -2548,7 +2848,7 @@ function Close({ dest }) {
                 as "NEXT.IO". The yellow button carries a border of its own
                 colour so it matches the outlined one beside it exactly. */}
             <a
-              href="mailto:sales@next.io?subject=NEXT.io%20Retreats%202027%20%E2%80%94%20partnership%20enquiry"
+              href={CHOOSER_MAILTO}
               className="inline-flex items-center justify-center gap-2.5 border border-brand-yellow bg-brand-yellow px-7 py-4
                          font-sans text-[14px] leading-[18px] tracking-[0.04em] text-brand-dark font-medium hover:brightness-110 transition"
             >
@@ -2606,10 +2906,159 @@ function Footer() {
           All prices exclude VAT. Availability is live and subject to change without
           notice. Leisure activities are sold only alongside a Headline or General
           Partnership. Attendee and partner marks are the property of their respective
-          owners and are shown to indicate participation in previous editions.
+          owners and are shown to indicate participation in previous editions or a
+          place on the 2026 guest lists.
         </p>
       </Shell>
     </footer>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   The chooser (29 Sep 2026)
+   Stuart: "if I could have a landing page again for this, where you get to
+   choose between the two, that would be amazing". No ?retreat in the address
+   is this screen, and nothing skips past it. Each card is a real link to its
+   retreat (goTo pushes the address, so Back comes back here). It carries no
+   deck, no package and no prices: those live on the retreats. The same
+   pattern as the media pack's brand chooser and Valletta's event chooser.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const CHOOSER = {
+  eyebrow: 'Partner brochure · 2027',
+  title: 'Choose your retreat.',
+  lede: 'Two five-star retreats, five weeks apart, each one room of a hundred: C-level operators, from the largest groups to the fast-growing names that bring new business, and fifty places for suppliers.',
+  cta: 'View this retreat',
+  guestsEyebrow: 'On the 2026 guest lists',
+  guestsTitle: 'Already on the lists.',
+}
+
+function RetreatChoiceCard({ dest: d, onGo, i }) {
+  return (
+    <a
+      href={retreatHref(d.id)}
+      data-choose={d.id}
+      onClick={(e) => {
+        if (!isPlainClick(e)) return
+        e.preventDefault()
+        onGo(d.id)
+      }}
+      className={`reveal in group relative isolate flex min-h-[26rem] sm:min-h-[30rem] lg:min-h-[24rem] xl:min-h-[27rem]
+                  flex-col justify-end overflow-hidden ring-1 ring-white/10 hover:ring-brand-yellow/45
+                  transition-[box-shadow] duration-500 ${d.theme}`}
+      style={{ transitionDelay: `${160 + i * 120}ms` }}
+    >
+      <img
+        src={asset(d.hero)}
+        alt=""
+        className="absolute inset-0 -z-10 h-full w-full object-cover [filter:saturate(1.1)_contrast(1.04)]
+                   transition-transform duration-[1600ms] ease-out group-hover:scale-[1.04]"
+      />
+      <div
+        className="absolute inset-0 -z-10"
+        style={{ background: 'linear-gradient(to top, rgba(28,28,31,0.97) 0%, rgba(28,28,31,0.86) 42%, rgba(28,28,31,0.5) 72%, rgba(28,28,31,0.22) 100%)' }}
+      />
+      <div className="caustics -z-10 opacity-40" />
+      <span aria-hidden="true" className="absolute top-0 inset-x-0 h-[2px] bg-brand-yellow scale-x-0 origin-left transition-transform duration-500 group-hover:scale-x-100" />
+
+      <div className="p-7 sm:p-10">
+        <p className="font-sans text-[10.5px] sm:text-[11px] uppercase track-wide text-brand-yellow">
+          Retreat {d.tag} · {d.edition}
+        </p>
+        <h2 className="mt-4 font-display text-[2.8rem] sm:text-[3.6rem] font-light leading-[0.95] tracking-[-0.015em] text-white">
+          {d.placeShort}
+        </h2>
+        <p className="mt-3 font-sans text-[15px] sm:text-[16px] font-medium text-white/90">{d.venue}</p>
+        <p className="mt-1 font-sans text-[14px] sm:text-[15px] font-light text-white/65 num">{d.dates}</p>
+        <p className="mt-5 max-w-[44ch] font-sans text-[13.5px] font-light leading-relaxed text-white/60">{d.lede}</p>
+        <span
+          className="mt-7 inline-flex h-12 items-center gap-2.5 bg-brand-yellow px-6 font-sans text-[11.5px] uppercase
+                     track-mid font-medium text-brand-dark transition group-hover:brightness-110"
+        >
+          {CHOOSER.cta} <ArrowRight size={14} strokeWidth={1.75} aria-hidden="true" className="transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </div>
+    </a>
+  )
+}
+
+/* Both 2026 lists, one moving row each, under the cards: the strength of the
+   rooms before anyone has chosen. Each label opens its retreat on its list. */
+function ChooserGuests({ onGo }) {
+  return (
+    <section className="relative overflow-hidden border-t border-white/10 py-16 sm:py-24">
+      <Shell>
+        <div className="reveal">
+          <Eyebrow>{CHOOSER.guestsEyebrow}</Eyebrow>
+          <h2 className="mt-4 font-display text-[2rem] sm:text-[2.6rem] font-light leading-[1.05] tracking-[-0.01em] text-white">
+            {CHOOSER.guestsTitle}
+          </h2>
+        </div>
+      </Shell>
+      <div className="mt-10 sm:mt-12 space-y-10 sm:space-y-12">
+        {Object.values(DESTINATIONS).map((d) => (
+          <div key={d.id} className={d.theme}>
+            <Shell>
+              <a
+                href={retreatHref(d.id, 'guests')}
+                onClick={(e) => {
+                  if (!isPlainClick(e)) return
+                  e.preventDefault()
+                  onGo(d.id, 'guests')
+                }}
+                className="group inline-flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 font-sans text-[11px] uppercase track-mid
+                           text-white/65 hover:text-brand-yellow transition-colors"
+              >
+                <span className="text-white/90 group-hover:text-brand-yellow">Retreat {d.tag} · {d.placeShort}</span>
+                <span className="num text-white/45">{d.edition2026}</span>
+                <ArrowRight size={13} strokeWidth={1.75} aria-hidden="true" />
+              </a>
+            </Shell>
+            <LogoRails logos={d.guests} rows={1} className="mt-3" />
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function Chooser({ onGo }) {
+  return (
+    <main className="relative">
+      <section id="top" className="relative min-h-[100svh] flex flex-col overflow-hidden">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="caustics" />
+        </div>
+        <div className="grain absolute inset-0" />
+
+        <Shell className="relative flex-1 w-full flex flex-col justify-center pt-[calc(var(--nav-h)+2rem)] pb-14 sm:pb-16">
+          <div className="reveal in grid gap-y-6 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-end lg:gap-x-16">
+            <Lockup className="h-14 sm:h-16 lg:h-20" />
+            <div className="min-w-0">
+              <p className="font-sans text-[10.5px] sm:text-[11px] uppercase track-wide text-brand-yellow">{keepCase(CHOOSER.eyebrow)}</p>
+              <h1 className="mt-3 font-display text-[2.6rem] sm:text-[3.4rem] xl:text-[3.9rem] font-light leading-[1] tracking-[-0.015em] text-white">
+                {CHOOSER.title}
+              </h1>
+            </div>
+          </div>
+          <p className="reveal in mt-6 max-w-[68ch] font-sans text-[15px] sm:text-[17px] font-light leading-relaxed text-white/65">
+            {CHOOSER.lede}
+          </p>
+
+          <div className="mt-9 sm:mt-11 grid gap-4 md:grid-cols-2 md:gap-5">
+            {Object.values(DESTINATIONS).map((d, i) => (
+              <RetreatChoiceCard key={d.id} dest={d} onGo={onGo} i={i} />
+            ))}
+          </div>
+
+          <p className="reveal in mt-7 max-w-[80ch] font-sans text-[13px] font-light leading-relaxed text-white/55">
+            <span className="text-white/85">{BOTH_HEAD.title}</span> {BOTH_HEAD.lede}
+          </p>
+        </Shell>
+      </section>
+
+      <ChooserGuests onGo={onGo} />
+    </main>
   )
 }
 
@@ -2623,8 +3072,9 @@ function Footer() {
    attendee logos, titles, programme, activity naming and photography come
    from DESTINATIONS[x]; packages and leisure slots are shared.
 
-   Order: cover → the verdict → the room → the companies → the titles →
-   three days → partnerships (family, then one slide per PACKAGES item) →
+   Order: cover → the 2026 guest list → the verdict → the room → previous
+   editions → the titles → three days → partnerships (family, then one slide
+   per PACKAGES item) →
    leisure (family, then one slide per ADDONS item, each stating
    ADDON_CONDITION) → build a package → previous partners → both retreats →
    next steps. No slide may carry a .reveal class: the page's reveal observer
@@ -2638,9 +3088,10 @@ function buildDeck(dest) {
   const leisureGroup = LEISURE_HEAD.eyebrow(dest)
   return [
     { id: 'cover', label: 'Cover', group: 'Start', kind: 'cover' },
+    { id: 'guests', label: 'On the 2026 guest list', group: 'The retreat', kind: 'guests' },
     { id: 'verdict', label: 'The verdict', group: 'The retreat', kind: 'verdict' },
     { id: 'room', label: 'The room', group: 'The retreat', kind: 'room' },
-    { id: 'who', label: 'The companies', group: 'The retreat', kind: 'who' },
+    { id: 'who', label: 'Previous editions', group: 'The retreat', kind: 'who' },
     { id: 'who-titles', label: 'The titles', group: 'The retreat', kind: 'titles' },
     { id: 'days', label: 'Three days', group: 'The retreat', kind: 'days' },
     { id: 'partner', label: partnerGroup, group: partnerGroup, kind: 'packages' },
@@ -2656,21 +3107,21 @@ function buildDeck(dest) {
 
 /* Slide type: bigger than the page, the same families and weights. */
 const SLIDE_EYEBROW = 'font-sans text-[10.5px] sm:text-[11px] uppercase track-wide text-brand-yellow'
-const SLIDE_LEDE = 'mt-4 max-w-[54ch] font-sans text-[15px] sm:text-[16.5px] font-light leading-relaxed text-white/65'
+const SLIDE_LEDE = 'mt-4 font-sans text-[15px] sm:text-[16.5px] font-light leading-relaxed text-white/65'
 const SLIDE_BTN = 'inline-flex min-h-11 items-center justify-center gap-2.5 px-5 py-3 font-sans text-[11px] uppercase track-mid transition'
 const SLIDE_PRIMARY = `${SLIDE_BTN} bg-brand-yellow text-brand-dark font-medium hover:brightness-110`
 const SLIDE_OUTLINE = `${SLIDE_BTN} border border-white/25 text-white hover:border-brand-yellow hover:text-brand-yellow`
 const SLIDE_QUIET = 'inline-flex min-h-11 items-center gap-2 px-2 font-sans text-[11px] uppercase track-mid text-white/60 hover:text-brand-yellow transition-colors'
 
-function SlideHead({ eyebrow, title, lede, measure = 'max-w-[24ch]', className = '' }) {
+function SlideHead({ eyebrow, title, lede, measure = 'max-w-[24ch]', ledeMeasure = 'max-w-[54ch]', className = '' }) {
   return (
     <div className={className}>
-      <p className={SLIDE_EYEBROW}>{eyebrow}</p>
+      <p className={SLIDE_EYEBROW}>{keepCase(eyebrow)}</p>
       <h2 className={`mt-4 text-balance font-display font-light leading-[1.04] tracking-[-0.012em] text-white
                       text-[2.1rem] sm:text-[2.8rem] lg:text-[3.3rem] ${measure}`}>
         {title}
       </h2>
-      {lede && <p className={SLIDE_LEDE}>{lede}</p>}
+      {lede && <p className={`${SLIDE_LEDE} ${ledeMeasure}`}>{lede}</p>}
     </div>
   )
 }
@@ -2713,20 +3164,23 @@ function CoverSlide({ ctx }) {
   return (
     <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,21rem)] lg:gap-14">
       <div>
-        <Lockup className="h-12 sm:h-16 lg:h-[4.5rem]" />
+        <Lockup className="h-12 sm:h-16" />
         <div className="mt-6">
-          <div className="font-sans text-[13px] sm:text-[15px] font-medium uppercase track-mid text-white">{dest.coverLine}</div>
+          <div className="font-sans text-[13px] sm:text-[15px] font-medium uppercase track-mid text-white">{keepCase(dest.coverLine)}</div>
           <div className="mt-1.5 font-sans text-[15px] sm:text-lg font-medium text-brand-yellow">{dest.venue}</div>
         </div>
         <HeroHeadline
           as="h2"
-          className="mt-8 sm:mt-10 font-display font-light text-white leading-[0.94] tracking-[-0.015em]
-                     text-[2.6rem] sm:text-[3.8rem] lg:text-[4.4rem]"
+          className="mt-7 sm:mt-9 font-display font-light text-white leading-[0.94] tracking-[-0.015em]
+                     text-[2.6rem] sm:text-[3.6rem] lg:text-[4rem]"
         />
+        {/* Between 1024 and 1279 the column beside the contents list is too
+            narrow for three more lines on one screen */}
+        <HeroValue reveal={false} textClass="text-[14.5px] sm:text-[15px]" className="mt-6 !space-y-2 lg:max-xl:hidden" />
         <HeroFacts
           reveal={false}
           ddClass="text-[16px] sm:text-lg"
-          className="mt-9 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4"
+          className="mt-7 grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4"
         />
       </div>
 
@@ -2778,32 +3232,32 @@ function VerdictSlide({ ctx }) {
 function RoomSlide({ ctx }) {
   return (
     <div>
-      <SlideHead eyebrow={ROOM_HEAD.eyebrow} title={ROOM_HEAD.title} lede={ROOM_HEAD.lede(ctx.dest)} measure="max-w-[34ch]" />
+      {/* The Europe focus line ran to a third line and the slide scrolled 11px
+          at 1280x800; the wider measure keeps it to two */}
+      <SlideHead eyebrow={ROOM_HEAD.eyebrow} title={ROOM_HEAD.title} lede={ROOM_HEAD.lede(ctx.dest)} measure="max-w-[34ch]" ledeMeasure="max-w-[66ch]" />
       <RoomPanels reveal={false} dense className="mt-7" />
     </div>
   )
 }
 
-/* The attendee marks as a still wall (the page's rail moves). Tiles are
+/* The two walls as still grids (the page's guest list moves). Tiles are
    sized per row so the last row centres instead of trailing. */
+function GuestsSlide({ ctx }) {
+  const { dest } = ctx
+  return (
+    <div>
+      <SlideHead eyebrow={GUESTS_HEAD.eyebrow(dest)} title={GUESTS_HEAD.title} lede={GUESTS_HEAD.lede(dest)} measure="max-w-[34ch]" />
+      <LogoGrid logos={dest.guests} dense reveal={false} className="mt-8" />
+    </div>
+  )
+}
+
 function WhoSlide({ ctx }) {
   const { dest } = ctx
   return (
     <div>
       <SlideHead eyebrow={WHO_HEAD.eyebrow(dest)} title={WHO_HEAD.title} lede={WHO_HEAD.lede(dest)} measure="max-w-[34ch]" />
-      <ul className="mt-8 flex flex-wrap justify-center gap-2 sm:gap-3">
-        {dest.attendees.map(([file, name]) => (
-          <li
-            key={file}
-            title={name}
-            className="grid h-14 w-[calc((100%-1rem)/3)] place-items-center border border-white/[0.07] bg-white/[0.04] px-3
-                       sm:w-[calc((100%-3rem)/5)] lg:w-[calc((100%-5.25rem)/8)]
-                       [--logo-k:34px] sm:[--logo-k:42px]"
-          >
-            <WallLogo src={asset(`${dest.logoDir}/${file}.png`)} alt={name} className={`max-h-8 max-w-full ${SILHOUETTE}`} />
-          </li>
-        ))}
-      </ul>
+      <LogoGrid logos={dest.previous} dense reveal={false} className="mt-8" />
     </div>
   )
 }
@@ -2940,7 +3394,7 @@ function PackageSlide({ slide, ctx }) {
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <span className={SLIDE_EYEBROW}>{PARTNER_HEAD.eyebrow}</span>
           <span aria-hidden="true" className="text-white/25">·</span>
-          <span className="font-sans text-[10.5px] sm:text-[11px] uppercase track-mid text-white/60">{pkg.kicker}</span>
+          <span className="font-sans text-[10.5px] sm:text-[11px] uppercase track-mid text-white/60">{keepCase(pkg.kicker)}</span>
           {pkg.exclusive && <ExclusiveBadge />}
         </div>
         <h2 className="mt-5 text-balance font-display font-light leading-[1.02] tracking-[-0.015em] text-white
@@ -3010,6 +3464,7 @@ function AddonSlide({ slide, ctx }) {
                 key={im.src}
                 src={asset(im.src)}
                 alt={im.alt}
+                style={im.pos ? { objectPosition: im.pos } : undefined}
                 className={`w-full object-cover ${imgs.length > 1 ? 'aspect-[3/4]' : 'aspect-[4/3]'}`}
               />
             ))}
@@ -3136,7 +3591,7 @@ function NextSlide({ ctx }) {
         className="mt-5 max-w-[26ch] text-balance font-display font-light leading-[1.02] tracking-[-0.015em] text-white
                    text-[2.2rem] sm:text-[3rem] lg:text-[3.5rem]"
       />
-      <p className={SLIDE_LEDE}>
+      <p className={`${SLIDE_LEDE} max-w-[54ch]`}>
         {INVENTORY_LINE} {d > 0 ? `${d.toLocaleString('en-US')} days out.` : ''}
       </p>
 
@@ -3198,7 +3653,7 @@ function NextSlide({ ctx }) {
 }
 
 const SLIDE_KINDS = {
-  cover: CoverSlide, verdict: VerdictSlide, room: RoomSlide, who: WhoSlide, titles: TitlesSlide,
+  cover: CoverSlide, guests: GuestsSlide, verdict: VerdictSlide, room: RoomSlide, who: WhoSlide, titles: TitlesSlide,
   days: DaysSlide, packages: PackagesSlide, package: PackageSlide, addons: AddonsSlide,
   addon: AddonSlide, build: BuildSlide, partners: PartnersSlide, both: BothSlide, next: NextSlide,
 }
@@ -3212,39 +3667,73 @@ function DeckSlide({ slide, ctx }) {
    App
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Deep links. ?retreat=latam opens the page on that retreat (Europe is the
-   default and needs no parameter); a #hash then lands on a section or card,
-   e.g. ?retreat=latam#partner or #partner-general. */
-const readDest = () => {
+/* Deep links and the chooser. The address is the only source of truth:
+     ?retreat=europe, ?retreat=latam   that retreat
+     no ?retreat                        the chooser
+   Links made before the chooser (29 Sep 2026) had no ?retreat for Europe, the
+   old default, so they still open Europe and gain ?retreat=europe
+   (replaceState): a #hash that lives on a retreat (#partner-general, #build),
+   a ?present=<slide id> other than the cover, and a ?plan= package link.
+   Anything else with no ?retreat is the chooser, where a bare ?present (or
+   ?present=cover) is dropped: the chooser has no deck. */
+const RETREAT_IDS = new Set([
+  'top', 'guests', 'who', 'partners', ...NAV.map(([id]) => id),
+  ...PACKAGES.map((p) => `partner-${p.id}`), ...ADDONS.map((a) => `leisure-${a.id}`),
+])
+
+function readRetreat() {
   try {
-    const q = new URLSearchParams(window.location.search).get('retreat')
-    return q && DESTINATIONS[q] ? q : 'europe'
-  } catch {
-    return 'europe'
-  }
+    const params = new URLSearchParams(window.location.search)
+    const q = (params.get('retreat') || '').toLowerCase()
+    if (DESTINATIONS[q]) return q
+    const slide = params.get('present')
+    if (slide && slide !== 'cover' && buildDeck(DESTINATIONS.europe).some((d) => d.id === slide)) return 'europe'
+    if (params.has('plan')) return 'europe'
+    if (RETREAT_IDS.has(decodeURIComponent(window.location.hash.slice(1)))) return 'europe'
+  } catch { /* no URL access: the chooser */ }
+  return null
 }
 
+const TITLE_HOME = 'NEXT.io Retreats 2027 - Partner Brochure'
+const titleFor = (dest) => (dest ? `NEXT.io Retreat ${dest.tag} 2027 - Partner Brochure` : TITLE_HOME)
+
 export default function App() {
-  const [destId, setDestId] = useState(readDest)
+  // null is the chooser; 'europe' and 'latam' are the two retreats
+  const [destId, setDestId] = useState(readRetreat)
   // A shared package link (?plan=) is restored through addToCart
   const [cart, setCart] = useState(readPlan)
   // Leisure slots that left with the last partnership, named in the builder
   const [dropped, setDropped] = useState([])
   const { present, open, close } = usePresent()
-  const dest = DESTINATIONS[destId]
+  const dest = destId ? DESTINATIONS[destId] : null
+  // The retreat the package was built for: inventory is per retreat, so
+  // arriving on the other one empties it (going to the chooser and back to
+  // the same retreat keeps it).
+  const cartFor = useRef(destId)
 
   useReveal()
 
-  // The address always names the retreat on screen, so a copied link opens
-  // the same one.
+  const applyRetreat = useCallback((next) => {
+    setDestId(next)
+    if (next && next !== cartFor.current) {
+      cartFor.current = next
+      setCart([])
+      setDropped([])
+    }
+  }, [])
+
+  // First load: a link made before the chooser gains the retreat it opened,
+  // so a copied address names it; an unknown ?retreat= leaves the address.
   useEffect(() => {
     try {
       const url = new URL(window.location.href)
-      if (destId === 'europe') url.searchParams.delete('retreat')
-      else url.searchParams.set('retreat', destId)
-      if (url.href !== window.location.href) window.history.replaceState(null, '', url)
+      const q = url.searchParams.get('retreat')
+      if (destId && q !== destId) url.searchParams.set('retreat', destId)
+      else if (!destId && q !== null) url.searchParams.delete('retreat')
+      else return
+      window.history.replaceState(window.history.state, '', url)
     } catch { /* an address we cannot rewrite is left as it is */ }
-  }, [destId])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // A package link has done its job once the package is restored: drop
   // ?plan= from the address, so a copied address never re-adds it.
@@ -3272,16 +3761,56 @@ export default function App() {
     return () => { live = false }
   }, [])
 
-  // Switching destination resets the package — inventory is per retreat.
+  useEffect(() => { document.title = titleFor(dest) }, [dest])
+
+  // Every move between screens (a chooser card, the retreat switch, the way
+  // back, a both-retreats card) pushes the address, so Back returns, and opens
+  // the new screen at its top (or on the place asked for).
+  const [landReq, setLandReq] = useState(null)
+  const goTo = useCallback((next, id = null) => {
+    try {
+      const url = new URL(window.location.href)
+      if (next) url.searchParams.set('retreat', next)
+      else url.searchParams.delete('retreat')
+      url.searchParams.delete('present')
+      url.searchParams.delete('plan')
+      url.hash = id || ''
+      window.history.pushState(null, '', url)
+    } catch { /* the screen still changes */ }
+    applyRetreat(next)
+    setLandReq({ id, n: Date.now() })
+  }, [applyRetreat])
+  useLayoutEffect(() => {
+    if (!landReq) return
+    const el = landReq.id ? document.getElementById(landReq.id) : null
+    if (el) el.scrollIntoView({ block: 'start', behavior: 'instant' })
+    else window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [landReq])
+
+  // Back and Forward swap the screen and leave the scroll to the browser,
+  // which puts the reader back where they were. Never force a scroll here.
+  useEffect(() => {
+    const onPop = () => applyRetreat(readRetreat())
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [applyRetreat])
+
+  // The chooser has nothing to present
+  useEffect(() => {
+    if (destId === null && present !== null) close()
+  }, [destId, present, close])
+
+  // The deck's both-retreats slide moves the deck and the page to the other
+  // retreat. Moving through a deck is never a navigation (the deck's own
+  // rule), so this replaces the address rather than pushing it.
   const changeDest = useCallback((id) => {
-    setDestId((prev) => {
-      if (prev !== id) {
-        setCart([])
-        setDropped([])
-      }
-      return id
-    })
-  }, [])
+    try {
+      const url = new URL(window.location.href)
+      url.searchParams.set('retreat', id)
+      window.history.replaceState(window.history.state, '', url)
+    } catch { /* the deck still moves */ }
+    applyRetreat(id)
+  }, [applyRetreat])
 
   // Every add, from a card, a slide or the builder's +, goes through the
   // same rules (addToCart: caps and the leisure condition).
@@ -3304,9 +3833,9 @@ export default function App() {
 
   const cartCount = cart.reduce((s, l) => s + l.qty, 0)
 
-  // Present mode. The deck follows the destination on screen; "Open the
-  // card" closes it and lands on the card once the page is back.
-  const slides = useMemo(() => buildDeck(dest), [dest])
+  // Present mode, on a retreat only. The deck follows the retreat on screen;
+  // "Open the card" closes it and lands on the card once the page is back.
+  const slides = useMemo(() => (dest ? buildDeck(dest) : []), [dest])
   const landRef = useRef(null)
   const openCard = useCallback((id) => {
     landRef.current = id
@@ -3328,29 +3857,34 @@ export default function App() {
   const deckCtx = { dest, destId, cart, add, take, clear, dropped, openCard, changeDest, slides }
 
   return (
-    <div className={`${dest.theme} relative min-h-screen bg-[var(--ground)]`}>
-      {/* The sea, everywhere — slow, faint, behind every section */}
+    <div className={`${dest ? dest.theme : 'theme-europe'} relative min-h-screen bg-[var(--ground)]`}>
+      {/* The sea, everywhere: slow, faint, behind every section */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="atmosphere" />
       </div>
-      <Nav destId={destId} setDestId={changeDest} cartCount={cartCount} onPresent={open} />
-      <main className="relative">
-        <Hero dest={dest} destId={destId} setDestId={changeDest} onPresent={open} />
-        <Verdict dest={dest} />
-        <Why dest={dest} />
-        <TheRoom dest={dest} />
-        <WhoIsIn dest={dest} />
-        <ThreeDays dest={dest} />
-        <Partnerships dest={dest} cart={cart} onAdd={add} onPresent={open} />
-        <Leisure dest={dest} cart={cart} onAdd={add} onPresent={open} />
-        <Builder dest={dest} cart={cart} onAdd={add} onTake={take} onClear={clear} dropped={dropped} />
-        <Partners2026 />
-        <BothRetreats destId={destId} setDestId={changeDest} />
-        <Close dest={dest} />
-      </main>
+      <Nav destId={destId} onGo={goTo} cartCount={dest ? cartCount : 0} onPresent={open} />
+      {dest ? (
+        <main className="relative">
+          <Hero dest={dest} destId={destId} onGo={goTo} onPresent={open} />
+          <GuestStrip dest={dest} />
+          <Verdict dest={dest} />
+          <Why dest={dest} />
+          <TheRoom dest={dest} />
+          <WhoIsIn dest={dest} />
+          <ThreeDays dest={dest} />
+          <Partnerships dest={dest} cart={cart} onAdd={add} onPresent={open} />
+          <Leisure dest={dest} cart={cart} onAdd={add} onPresent={open} />
+          <Builder dest={dest} cart={cart} onAdd={add} onTake={take} onClear={clear} dropped={dropped} />
+          <Partners2026 />
+          <BothRetreats destId={destId} onGo={goTo} />
+          <Close dest={dest} />
+        </main>
+      ) : (
+        <Chooser onGo={goTo} />
+      )}
       <Footer />
 
-      {present !== null && (
+      {dest && present !== null && (
         <PresentMode
           slides={slides}
           startId={present}
@@ -3359,6 +3893,7 @@ export default function App() {
           shortTitle={dest.tag}
           logo={(slide) => (slide.kind === 'cover' ? null : <Lockup className="h-6 sm:h-7 shrink-0" />)}
           theme={dest.theme}
+          formatText={keepCase}
           renderSlide={(slide, api) => <DeckSlide slide={slide} ctx={{ ...deckCtx, api }} />}
           renderBackdrop={(slide) => (slide.kind === 'cover' ? <CoverBackdrop dest={dest} /> : null)}
         />

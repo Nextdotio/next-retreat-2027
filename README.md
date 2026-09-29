@@ -1,7 +1,8 @@
 # next-retreat-2027
 
-Partner brochure for the **NEXT.io Retreats 2027** — a single page covering both
-editions, with a destination switch rather than two sites.
+Partner brochure for the **NEXT.io Retreats 2027**: one site covering both
+editions: a landing page that chooses the retreat, then one screen per retreat
+(`?retreat=europe`, `?retreat=latam`) with a switch between them.
 
 - **Retreat Europe** · Cap St Georges Hotel & Resort, Cyprus · 11–13 October 2027
 - **Retreat LatAm** · Secrets Maroma Beach Riviera Cancun, Mexico · 15–17 November 2027
@@ -30,7 +31,7 @@ Live: https://nextdotio.github.io/next-retreat-2027/
 | `src/index.css` | Design tokens, the two destination themes, water/grain effects |
 | `src/fonts/` | Self-hosted Jost (no CDN at runtime) |
 | `public/images/` | Event and resort photography |
-| `public/logos/attendees/` | 2026 attendee company marks, per destination |
+| `public/logos/attendees/` | Attendee company marks per destination: the 2026 guest lists and previous editions |
 | `public/logos/partners/` | 2026 headline and general partner marks |
 | `CLAUDE.md` | How to work on this repo |
 | `DATA_SOURCES.md` | Provenance for every figure, and the open questions |

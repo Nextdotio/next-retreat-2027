@@ -112,7 +112,10 @@ export function CopyLinkButton({ id, link, label = 'Copy link', title = 'Copy a 
 // theme is the destination class, so --sea and --ground reach the portal.
 // logo may be a function of the slide (the cover carries its own lockup, so
 // the bar leaves its one out there); shortTitle replaces title on a phone.
-export function PresentMode({ slides, startId, onClose, renderSlide, renderBackdrop, title, shortTitle, logo = null, theme = '' }) {
+// formatText renders the title and the group labels, which are set in
+// capitals: the app passes a function that keeps names such as iGaming in
+// their own case (the dialog's accessible name stays the plain title).
+export function PresentMode({ slides, startId, onClose, renderSlide, renderBackdrop, title, shortTitle, logo = null, theme = '', formatText = (t) => t }) {
   const [i, setI] = useState(() => {
     const at = slides.findIndex((s) => s.id === startId)
     return at >= 0 ? at : 0
@@ -232,8 +235,8 @@ export function PresentMode({ slides, startId, onClose, renderSlide, renderBackd
       <header className="relative z-10 flex items-center gap-3 border-b border-white/10 bg-ink/55 backdrop-blur-md px-4 sm:px-8 py-2.5">
         <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
           {typeof logo === 'function' ? logo(slide) : logo}
-          <span className={`${shortTitle ? 'hidden sm:block' : ''} truncate font-sans text-[10.5px] sm:text-[11px] uppercase track-mid text-white/70`}>{title}</span>
-          {shortTitle && <span className="truncate font-sans text-[10.5px] uppercase track-mid text-white/70 sm:hidden">{shortTitle}</span>}
+          <span className={`${shortTitle ? 'hidden sm:block' : ''} truncate font-sans text-[10.5px] sm:text-[11px] uppercase track-mid text-white/70`}>{formatText(title)}</span>
+          {shortTitle && <span className="truncate font-sans text-[10.5px] uppercase track-mid text-white/70 sm:hidden">{formatText(shortTitle)}</span>}
         </div>
         <button type="button" onClick={() => setListOpen((v) => !v)} aria-expanded={listOpen}
           className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-white/15 px-3.5 sm:px-4 font-sans text-[12px] text-white/80 num
@@ -271,7 +274,7 @@ export function PresentMode({ slides, startId, onClose, renderSlide, renderBackd
                        font-sans text-[11px] uppercase track-mid text-white/80 disabled:opacity-30 hover:border-brand-yellow/60 hover:text-brand-yellow transition-colors">
             <ChevronLeft size={17} strokeWidth={1.6} aria-hidden /><span className="hidden sm:inline">Back</span>
           </button>
-          <p className="min-w-0 flex-1 truncate text-center font-sans text-[10.5px] uppercase track-mid text-white/50">{slide.group}</p>
+          <p className="min-w-0 flex-1 truncate text-center font-sans text-[10.5px] uppercase track-mid text-white/50">{formatText(slide.group)}</p>
           <button type="button" onClick={() => go((c) => c + 1)} disabled={!next}
             className="inline-flex h-11 max-w-[64%] shrink-0 items-center justify-center gap-1.5 rounded-full bg-brand-yellow px-4 sm:px-5
                        font-sans text-[11px] uppercase track-mid font-medium text-brand-dark disabled:opacity-30 hover:brightness-110 transition">
@@ -295,7 +298,7 @@ export function PresentMode({ slides, startId, onClose, renderSlide, renderBackd
             <div className="mx-auto max-w-6xl sm:columns-2 lg:columns-3 gap-10">
               {groups.map((g, gi) => (
                 <div key={`${g.group}-${gi}`} className="mb-7 break-inside-avoid">
-                  <p className="mb-2 px-2 font-sans text-[10.5px] uppercase track-wide text-brand-yellow">{g.group}</p>
+                  <p className="mb-2 px-2 font-sans text-[10.5px] uppercase track-wide text-brand-yellow">{formatText(g.group)}</p>
                   <ul>
                     {g.items.map(([s, n]) => (
                       <li key={s.id}>

@@ -1,7 +1,7 @@
 # Data sources & provenance
 
-Every figure in `src/App.jsx` traces to one of three documents. This file records
-which, plus the judgement calls made where sources disagreed.
+Every figure in `src/App.jsx` traces to one of the documents below. This file
+records which, plus the judgement calls made where sources disagreed.
 
 ## Sources
 
@@ -10,6 +10,8 @@ which, plus the judgement calls made where sources disagreed.
 | **PLAN** | `NEXT.io_Retreats_2027_Drive_1.pptx` — the 2027 commercial plan |
 | **BR26** | `Retreat_Cyprus_2026__Brochure.pdf` and `Retreat_LATAM_2026__Brochure.pdf` — published partner brochures for the 2026 editions |
 | **SNAP** | `NEXT_Cyprus_Retreat_2026_Attendee_Snapshot.pdf` and `NEXT_Cancun_Retreat_2026_Attendee_Snapshot.pdf`, generated 21 Aug 2026 from monday.com |
+| **LIST** | Rory Credland's "NEXT Cyprus Retreat 2026 - Weekly Delegate Update" and "NEXT Cancun Retreat 2026 - Weekly Delegate Update", 18 Sep 2026 (company and job title only), for the 2026 editions (Cyprus 12-14 Oct 2026, Cancún 17-19 Nov 2026) |
+| **CONF** | Mathias Massoue's email threads confirming the Cancún 2026 partners (SOFTSWISS as Headline, Alea, Playson, TaDa Gaming) |
 
 ## What came from where
 
@@ -26,16 +28,20 @@ which, plus the judgement calls made where sources disagreed.
 | The four positioning statements | PLAN slide 16 |
 | Content formats and operator speakers on stage | PLAN slide 12 |
 | Headline / General partnership deliverables | BR26 p5 |
-| Seniority split (83% C-level / 17% senior management) | BR26 p4 |
-| Composition (52% operators / 35% service providers / 10% investors / 3% associations) | BR26 p4 |
+| Seniority split (83% C-level / 17% senior management), labelled "previous editions" | BR26 p4 |
+| Composition (52% operators / 35% service providers / 10% investors / 3% associations), labelled "previous editions" | BR26 p4 |
 | 50 operators / 50 suppliers balance | BR26 p2, PLAN slide 16 |
 | Chatham House Rule | BR26 p2 |
-| Attendee company logos | BR26 p3 ("ATTENDEES") |
+| The 2026 guest-list wall (`guests`): which companies | LIST (delegates and the Cyprus partners), CONF (the Cancún partners); only companies with a logo on file |
+| The previous-editions wall (`previous`): which companies | BR26 p3 ("ATTENDEES"), minus anyone on LIST |
+| Attendee company logos (the artwork) | BR26 p3, except Betsson, BetMGM and L&L Europe (next-2027 `logo-src/operators`, untouched copies of sibling-site assets) and the partner marks (`public/logos/partners`) |
 | 2026 partner logos | BR26 cover pages |
 | C-level feedback scores | BR26 p7 |
 | Job titles in the room | SNAP, confirmed attendees only, aggregated to titles |
 | Activity flavour per destination (wine tasting, buggies, cenotes, tequila, volleyball) | BR26 p6 |
 | Official NEXT.io RETREAT lockup | BR26 covers, extracted at 600 dpi |
+| Sport & Relaxation by the Pool photograph (Europe), `images/cyprus-pool.jpg` | NEXT's own Retreat Europe 2025 photography, SharePoint EliteRetreats, "NEXT Retreat EU/2025/Marketing/Event Photos For The Website", IMG_0376 (19 Oct 2025) |
+| "Five-star" (hero value line, chooser, positioning) | Stuart, 29 Sep 2026 ("genuinely a five-star experience") |
 | Brand charcoal `#242426` and yellow `#ffcf33` | BR26 covers (sampled `#232425` / `#ffd033`), matching the tokens already used in the Summit repos |
 | The yellow chevron arrow device | BR26 covers, redrawn as inline SVG |
 
@@ -118,3 +124,34 @@ partnerships sales contact.
 - Will's footer title corrected to Sales Director. Cancún accented on the
   cover line (the resort name "Secrets Maroma Beach Riviera Cancun" keeps
   its official unaccented spelling).
+
+## The 2026 guest lists and the previous editions (29 Sep 2026)
+
+- The old wall's heading called the BR26 attendee page "the 2026 guest list".
+  Checked against LIST, 10 of the 24 Cyprus logos and 28 of the 38 LatAm
+  logos were not on the 2026 lists: they are earlier editions' attendees. The
+  page now has two walls, "On the 2026 guest list" (LIST plus the confirmed
+  partners) and "Previous editions" (the rest of BR26 p3). 1xBet is on the
+  Cyprus 2026 list and on the LatAm previous-editions wall, which is true of
+  both.
+- LIST counts people, not logos: many companies on it have no logo on file,
+  so the wall is a selection and its lede gives no count. Companies on the
+  lists that the page does not show are not named in this repo either.
+- Some LIST rows carry "(to confirm)"; the wall's wording is Rory's own, "on
+  the list", never "confirmed".
+- The page publishes no seniority from LIST. The 83% figure stays BR26's,
+  labelled as previous editions.
+
+## Judgement calls, 29 Sep 2026 (worth a second opinion)
+
+1. **"Five-star resort."** Both hotels are marketed as five-star (Cap St
+   Georges Hotel & Resort; Secrets Maroma Beach Riviera Cancun), and Stuart
+   asked for the five-star point to be unmistakable. Confirm against each
+   resort's official rating if a buyer asks.
+2. **Z-Gaming Asia** is on the partner wall from the BR26 covers but on
+   neither 18 Sep list nor the Cancún confirmations. The wall's title says
+   "the brands that backed the 2026 retreats"; check before the next
+   partner-wall change whether Z-Gaming Asia belongs to 2026 or an earlier
+   edition.
+3. **TaDa Gaming** is a confirmed Cancún 2026 partner with no logo on the
+   page yet: its SVG exists only as an email attachment (see CLAUDE.md).
