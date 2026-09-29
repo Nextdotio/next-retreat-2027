@@ -146,8 +146,10 @@ partnerships sales contact.
 
 1. **"Five-star resort."** Both hotels are marketed as five-star (Cap St
    Georges Hotel & Resort; Secrets Maroma Beach Riviera Cancun), and Stuart
-   asked for the five-star point to be unmistakable. Confirm against each
-   resort's official rating if a buyer asks.
+   asked for the five-star point to be unmistakable. Checked 29 Sep 2026:
+   capstgeorges.com calls Cap St Georges a "5-Star Luxury Beach Resort", and
+   Secrets Maroma Beach Riviera Cancun holds the AAA Five Diamond Award (its
+   own awards page, secretsresorts.com). The line stands.
 2. **Z-Gaming Asia** is on the partner wall from the BR26 covers but on
    neither 18 Sep list nor the Cancún confirmations. The wall's title says
    "the brands that backed the 2026 retreats"; check before the next
