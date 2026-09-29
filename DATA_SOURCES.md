@@ -151,9 +151,8 @@ partnerships sales contact.
    Secrets Maroma Beach Riviera Cancun holds the AAA Five Diamond Award (its
    own awards page, secretsresorts.com). The line stands.
 2. **Z-Gaming Asia** is on the partner wall from the BR26 covers but on
-   neither 18 Sep list nor the Cancún confirmations. The wall's title says
-   "the brands that backed the 2026 retreats"; check before the next
-   partner-wall change whether Z-Gaming Asia belongs to 2026 or an earlier
-   edition.
+   neither 18 Sep list nor the Cancún confirmations. Stuart, asked on 29 Sep
+   2026, kept it ("Keep it"): it stays on "the brands that backed the 2026
+   retreats". Do not remove it on the lists' evidence alone.
 3. **TaDa Gaming** is a confirmed Cancún 2026 partner with no logo on the
    page yet: its SVG exists only as an email attachment (see CLAUDE.md).
